@@ -121,5 +121,17 @@
 	"charts.weeksNote": "Najwyższe zużycie w każdym tygodniu (data = początek tygodnia). Pusty słupek to bieżący tydzień.",
 	"charts.empty": "Brak historii limitów. Pojawi się po pierwszych odczytach.",
 	"charts.tokens": "Wygenerowane tokeny na godzinę, ostatnie 24 h ({total})",
-	"limits.expired": "nowe okno, czekam na odczyt"
+	"limits.expired": "nowe okno, czekam na odczyt",
+	"tab.display": "Wygląd",
+	"tab.cards": "Karty",
+	"tab.replies": "Odpowiedzi",
+	"tab.alerts": "Alarmy",
+	"tab.limits": "Limity",
+	"settings.templates": "Przyciski odpowiedzi",
+	"templates.hint": "Pokazywane przy skończonych sesjach. Popraw, przesuń (↑), usuń (✕) albo dodaj nowy, potem Zapisz.",
+	"templates.usingDefaults": "Używasz domyślnych przycisków. Popraw je, żeby mieć własną listę.",
+	"templates.new": "Nowy przycisk…",
+	"templates.up": "Wyżej",
+	"templates.remove": "Usuń",
+	"templates.reset": "Domyślne"
 }

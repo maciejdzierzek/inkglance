@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { SETTINGS_TABS, LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
 import { lineChart, barChart } from './charts.js';
@@ -395,68 +395,108 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 	return layout(ctx, { title: t(lang, 'app.title'), active: 'sessions', summary, body, live: true });
 }
 
-// Settings as big buttons (radio groups and toggles styled as buttons): no typing,
-// no sliders - dragging is unreliable on e-ink. With JavaScript every tap saves.
-export function settingsPage(ctx, { configFile }) {
+// Settings in tabs, as big buttons (radio groups and toggles styled as buttons):
+// no sliders - dragging is unreliable on e-ink. With JavaScript every tap saves;
+// the reply-button editor saves with its own button (it has text fields).
+export function settingsPage(ctx, { configFile, tab }) {
 	const { config } = ctx;
 	const lang = config.language;
 	const href = makeHref(ctx);
+	const current = SETTINGS_TABS[tab] ? tab : 'display';
 
-	const group = (name, options, current, label) =>
+	const group = (name, options, value) =>
 		`<fieldset><legend>${esc(t(lang, 'settings.' + name))}</legend><div class="choices">${options
 			.map(
-				([value, text]) =>
-					`<label class="choice"><input type="radio" name="${name}" value="${esc(value)}"${String(value) === String(current) ? ' checked' : ''}><span>${esc(text)}</span></label>`,
+				([v, text]) =>
+					`<label class="choice"><input type="radio" name="${name}" value="${esc(v)}"${String(v) === String(value) ? ' checked' : ''}><span>${esc(text)}</span></label>`,
 			)
 			.join('')}</div></fieldset>`;
 	const toggle = (name) =>
 		`<label class="choice"><input type="checkbox" name="${name}"${config[name] ? ' checked' : ''}><span>${esc(t(lang, 'settings.' + name))}</span></label>`;
+	const toggles = (legend, names) => `<fieldset><legend>${esc(t(lang, 'settings.' + legend))}</legend><div class="choices">${names.map(toggle).join('')}</div></fieldset>`;
+	const multi = (name, values, chosen, labelKey) =>
+		`<fieldset><legend>${esc(t(lang, 'settings.' + name))}</legend><div class="choices">${values
+			.map(
+				(v) =>
+					`<label class="choice"><input type="checkbox" name="${name}" value="${v}"${chosen.includes(v) ? ' checked' : ''}><span>${esc(t(lang, labelKey + v))}</span></label>`,
+			)
+			.join('')}</div></fieldset>`;
+	const seconds = (x) => (x < 60 ? `${x} s` : `${x / 60} min`);
+	const withCurrent = (presets, value) => [...new Set([...presets, value])].sort((a, b) => a - b);
 
-	const seconds = (s) => (s < 60 ? `${s} s` : `${s / 60} min`);
-	const refreshOptions = [...new Set([...REFRESH_PRESETS, config.refreshSeconds])].sort((a, b) => a - b).map((s) => [s, seconds(s)]);
-	const idleOptions = [...new Set([...IDLE_PRESETS, config.hideIdleAfterHours])]
-		.sort((a, b) => a - b)
-		.map((h) => [h, h === 0 ? t(lang, 'settings.never') : h % 24 === 0 && h >= 48 ? `${h / 24} ${t(lang, 'unit.days')}` : `${h} h`]);
-
-	const fields = `<fieldset><legend>${esc(t(lang, 'settings.cardFields'))}</legend><div class="choices">${CARD_FIELDS.map(
-		(f) =>
-			`<label class="choice"><input type="checkbox" name="cardFields" value="${f}"${config.cardFields.includes(f) ? ' checked' : ''}><span>${esc(t(lang, 'field.' + f))}</span></label>`,
-	).join('')}</div></fieldset>`;
-
-	const body = `<div id="main">
-<form method="post" action="${esc(href('/settings'))}" id="settings">
-<input type="hidden" name="t" value="${esc(config.token)}">
-${group('language', LANGUAGES.map((l) => [l, t(lang, 'lang.' + l)]), config.language)}
-${group('refreshSeconds', refreshOptions, config.refreshSeconds)}
-${group('orientation', ORIENTATIONS.map((o) => [o, t(lang, 'orientation.' + o)]), config.orientation)}
-${group('columns', COLUMNS.map((c) => [c, String(c)]), config.columns)}
-${fields}
-${group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale)}
-${group('hideIdleAfterHours', idleOptions, config.hideIdleAfterHours)}
-<fieldset><legend>${esc(t(lang, 'settings.display'))}</legend><div class="choices">${toggle('color')}${toggle('showDiagnostics')}</div></fieldset>
-<fieldset><legend>${esc(t(lang, 'settings.alertOn'))}</legend><div class="choices">${ALERT_KINDS.map(
-		(k) =>
-			`<label class="choice"><input type="checkbox" name="alertOn" value="${k}"${config.alertOn.includes(k) ? ' checked' : ''}><span>${esc(t(lang, 'alertOn.' + k))}</span></label>`,
-	).join('')}</div></fieldset>
-<fieldset><legend>${esc(t(lang, 'settings.alertHow'))}</legend><div class="choices">${toggle('macSound')}${toggle('macNotification')}${toggle('readerFlash')}</div></fieldset>
-${group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName)}
-<fieldset><legend>${esc(t(lang, 'settings.limits'))}</legend><div class="choices">${toggle('showLimits')}</div></fieldset>
-${group('usageSource', USAGE_SOURCES.map((u) => [u, t(lang, 'usageSource.' + u)]), config.usageSource)}
-${group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config.usageApiMinutes)}
-${group('approvals', APPROVAL_MODES.map((m) => [m, t(lang, 'approvals.' + m)]), config.approvals)}
-${group('awaySeconds', AWAY_PRESETS.map((x) => [x, x < 60 ? `${x} s` : `${x / 60} min`]), config.awaySeconds)}
-${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} min`]), config.approvalTimeoutMinutes)}
-<fieldset><legend>${esc(t(lang, 'settings.repliesTitle'))}</legend><div class="choices">${toggle('replies')}</div></fieldset>
+	let fields = '';
+	let manual = false;
+	if (current === 'display') {
+		fields = [
+			group('language', LANGUAGES.map((l) => [l, t(lang, 'lang.' + l)]), config.language),
+			group('orientation', ORIENTATIONS.map((o) => [o, t(lang, 'orientation.' + o)]), config.orientation),
+			group('columns', COLUMNS.map((c) => [c, String(c)]), config.columns),
+			group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale),
+			group('refreshSeconds', withCurrent(REFRESH_PRESETS, config.refreshSeconds).map((x) => [x, seconds(x)]), config.refreshSeconds),
+			toggles('display', ['color', 'showDiagnostics']),
+		].join('');
+	} else if (current === 'cards') {
+		const idle = withCurrent(IDLE_PRESETS, config.hideIdleAfterHours).map((h) => [
+			h,
+			h === 0 ? t(lang, 'settings.never') : h % 24 === 0 && h >= 48 ? `${h / 24} ${t(lang, 'unit.days')}` : `${h} h`,
+		]);
+		fields = multi('cardFields', CARD_FIELDS, config.cardFields, 'field.') + group('hideIdleAfterHours', idle, config.hideIdleAfterHours);
+	} else if (current === 'replies') {
+		manual = true;
+		const list = templatesFor(config);
+		const rows = list
+			.map(
+				(text, i) => `<div class="tpl-row"><input type="text" name="template" value="${esc(text)}" maxlength="200">
+<button type="submit" name="up" value="${i}" class="icon small-icon"${i === 0 ? ' disabled' : ''} title="${esc(t(lang, 'templates.up'))}">↑</button>
+<button type="submit" name="remove" value="${i}" class="icon small-icon" title="${esc(t(lang, 'templates.remove'))}">✕</button></div>`,
+			)
+			.join('');
+		fields = `<fieldset><legend>${esc(t(lang, 'settings.templates'))}</legend>
+<p class="muted small">${esc(t(lang, config.templates.length ? 'templates.hint' : 'templates.usingDefaults'))}</p>
+${rows}
+<div class="tpl-row"><input type="text" name="newTemplate" placeholder="${esc(t(lang, 'templates.new'))}" maxlength="200"></div>
+<div class="approval-actions"><button type="submit" class="button btn-allow">${esc(t(lang, 'settings.save'))}</button>
+<button type="submit" name="reset" value="1" class="button btn-release">${esc(t(lang, 'templates.reset'))}</button></div>
+</fieldset>
+${toggles('repliesTitle', ['replies'])}
 ${group('replyWindowHours', REPLY_WINDOW_PRESETS.map((h) => [h, `${h} h`]), config.replyWindowHours)}
-${group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours)}
-<noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>
+${group('approvals', APPROVAL_MODES.map((m) => [m, t(lang, 'approvals.' + m)]), config.approvals)}
+${group('awaySeconds', AWAY_PRESETS.map((x) => [x, seconds(x)]), config.awaySeconds)}
+${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} min`]), config.approvalTimeoutMinutes)}`;
+	} else if (current === 'alerts') {
+		fields = [
+			multi('alertOn', ALERT_KINDS, config.alertOn, 'alertOn.'),
+			toggles('alertHow', ['macSound', 'macNotification', 'readerFlash']),
+			group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName),
+			group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours),
+		].join('');
+	} else if (current === 'limits') {
+		fields = [
+			toggles('limits', ['showLimits']),
+			group('usageSource', USAGE_SOURCES.map((u) => [u, t(lang, 'usageSource.' + u)]), config.usageSource),
+			group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config.usageApiMinutes),
+		].join('');
+	}
+
+	const tabs = Object.keys(SETTINGS_TABS)
+		.map((k) => `<a class="subtab${k === current ? ' subtab-on' : ''}" href="${esc(href('/settings', { tab: k }))}">${esc(t(lang, 'tab.' + k))}</a>`)
+		.join('');
+	const body = `<div id="main">
+<div class="subtabs">${tabs}</div>
+<form method="post" action="${esc(href('/settings', { tab: current }))}" id="settings" class="${manual ? 'manual' : 'auto'}">
+<input type="hidden" name="t" value="${esc(config.token)}"><input type="hidden" name="tab" value="${current}">
+${fields}
+${manual ? '' : `<noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>`}
 </form>
 <p class="muted small">${esc(t(lang, 'settings.fileNote'))} ${esc(tildePath(configFile))}</p>
 </div>
 <script>
 (function () {
 	var form = document.getElementById('settings');
-	form.addEventListener('change', function () { form.submit(); });
+	// Buttons and toggles save at once; text fields wait for Save.
+	form.addEventListener('change', function (e) {
+		if (form.className === 'auto' || e.target.type === 'radio' || e.target.type === 'checkbox') form.submit();
+	});
 })();
 </script>`;
 	const summary = `<span class="bar-title">${esc(t(lang, 'settings.title'))}</span>`;

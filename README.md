@@ -39,7 +39,8 @@ is plain HTML and works in any browser.
 - **One-tap replies** on sessions that finished their turn ("Yes, continue",
   "Commit", your own) - in parallel with the computer, never instead of it.
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
-  English and Polish. Every setting is a big button - nothing to type on e-ink.
+  English and Polish. Settings are grouped in tabs and every option is a big
+button - nothing to type on e-ink except your own reply buttons.
 
 ## Where the data comes from
 
@@ -99,8 +100,9 @@ wakes Claude with your reply. Type on the computer first and a
 Unused slots expire after 4 hours (setting *Keep replies open for*). Each
 waiting session costs one idle curl process (about 5 MB).
 
-Reply buttons come from `templates` in the config file; empty means the
-language's defaults.
+Edit the reply buttons on the reader (Settings → Replies: change, reorder,
+remove, add) or as `templates` in the config file; empty means the language's
+defaults.
 
 ### Permission requests and questions: when you are away
 

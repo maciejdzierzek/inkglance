@@ -216,12 +216,11 @@ async function handle(req, res) {
 			if (config.macSound && (config.macSoundName !== before.macSoundName || !before.macSound)) playSound(config.macSoundName);
 			saveConfig(config, file);
 			log('settings saved', JSON.stringify({ ...config, token: '***' }));
-			const params = new URLSearchParams();
+			const params = new URLSearchParams({ tab: form.get('tab') || 'display' });
 			if (!viaCookie) params.set('t', config.token);
-			const qs = params.toString();
-			return send(res, 303, '', { Location: `/settings${qs ? '?' + qs : ''}` });
+			return send(res, 303, '', { Location: `/settings?${params}` });
 		}
-		return html(res, settingsPage(ctx, { configFile: file }), cookie);
+		return html(res, settingsPage(ctx, { configFile: file, tab: url.searchParams.get('tab') }), cookie);
 	}
 
 	// Answer from the reader: allow, deny, or hand back to the computer.

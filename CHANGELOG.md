@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Settings in tabs (Display, Cards, Replies, Alerts, Limits); each tab saves
+  only its own options.
+- Edit reply buttons on the reader: change, reorder, remove, add, defaults.
+
 - Limits screen with charts: this week + projection, output tokens per hour
   (24 h, from transcripts), weekly peaks. History from the Claude Code Usage
   extension, or recorded by the panel for other sources.

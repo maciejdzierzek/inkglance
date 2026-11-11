@@ -121,5 +121,17 @@
 	"charts.weeksNote": "Highest weekly usage per week (date = start of the week). The hollow bar is the current week.",
 	"charts.empty": "No limits history yet. It appears after the first readings.",
 	"charts.tokens": "Output tokens per hour, last 24 h ({total})",
-	"limits.expired": "new window, waiting for a reading"
+	"limits.expired": "new window, waiting for a reading",
+	"tab.display": "Display",
+	"tab.cards": "Cards",
+	"tab.replies": "Replies",
+	"tab.alerts": "Alerts",
+	"tab.limits": "Limits",
+	"settings.templates": "Reply buttons",
+	"templates.hint": "Shown on finished sessions. Edit, reorder (↑), remove (✕) or add one, then Save.",
+	"templates.usingDefaults": "Using the language's default buttons. Edit them to make your own list.",
+	"templates.new": "New button…",
+	"templates.up": "Move up",
+	"templates.remove": "Remove",
+	"templates.reset": "Defaults"
 }

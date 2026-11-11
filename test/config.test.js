@@ -18,7 +18,7 @@ test('normalize clamps and rejects invalid values', () => {
 
 test('settings form cannot change network, binary or token', () => {
 	const base = normalize({ token: 'a'.repeat(24) });
-	const form = new URLSearchParams({ language: 'pl', port: '80', claudeBin: '/bin/sh', token: 'b'.repeat(24), host: '1.2.3.4' });
+	const form = new URLSearchParams({ tab: 'display', language: 'pl', port: '80', claudeBin: '/bin/sh', token: 'b'.repeat(24), host: '1.2.3.4' });
 	const c = applySettingsForm(base, form);
 	assert.equal(c.language, 'pl');
 	assert.equal(c.port, base.port);
@@ -29,8 +29,19 @@ test('settings form cannot change network, binary or token', () => {
 
 test('unchecked checkboxes turn options off, card fields keep canonical order', () => {
 	const base = normalize({ color: true });
-	const form = new URLSearchParams('cardFields=tokens&cardFields=model&cardFields=bogus');
+	const form = new URLSearchParams('tab=cards&cardFields=tokens&cardFields=model&cardFields=bogus');
 	const c = applySettingsForm(base, form);
-	assert.equal(c.color, false);
+	assert.equal(c.color, true, 'a checkbox on another tab is untouched');
 	assert.deepEqual(c.cardFields, ['model', 'tokens']);
+	assert.equal(applySettingsForm(base, new URLSearchParams('tab=display')).color, false);
+});
+
+test('templates: edit, remove, move up, add, reset', () => {
+	const base = normalize({ templates: ['A', 'B', 'C'] });
+	const f = (q) => applySettingsForm(base, new URLSearchParams('tab=replies&template=A&template=B2&template=C&' + q)).templates;
+	assert.deepEqual(f(''), ['A', 'B2', 'C']);
+	assert.deepEqual(f('remove=0'), ['B2', 'C']);
+	assert.deepEqual(f('up=2'), ['A', 'C', 'B2']);
+	assert.deepEqual(f('newTemplate=D'), ['A', 'B2', 'C', 'D']);
+	assert.deepEqual(f('reset='), []);
 });

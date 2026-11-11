@@ -151,37 +151,43 @@ export function saveConfig(config, path = configPath()) {
 	chmodSync(path, 0o600);
 }
 
-// Applies a settings form: only user-facing preferences can change from the panel.
-// Network, binary path and token are edited in the file, deliberately.
-export function applySettingsForm(config, form) {
-	const editable = {
-		language: form.get('language'),
-		refreshSeconds: form.get('refreshSeconds'),
-		columns: form.get('columns'),
-		orientation: form.get('orientation'),
-		hideIdleAfterHours: form.get('hideIdleAfterHours'),
-		fontScale: form.get('fontScale'),
-		// Unchecked checkboxes are absent from a submitted form.
-		cardFields: form.getAll('cardFields'),
-		color: form.get('color') === 'on',
-		showDiagnostics: form.get('showDiagnostics') === 'on',
-		alertOn: form.getAll('alertOn'),
-		macSound: form.get('macSound') === 'on',
-		macSoundName: form.get('macSoundName'),
-		macNotification: form.get('macNotification') === 'on',
-		readerFlash: form.get('readerFlash') === 'on',
-		quietHours: form.get('quietHours'),
-		showLimits: form.get('showLimits') === 'on',
-		usageSource: form.get('usageSource'),
-		usageApiMinutes: form.get('usageApiMinutes'),
-		approvals: form.get('approvals'),
-		awaySeconds: form.get('awaySeconds'),
-		approvalTimeoutMinutes: form.get('approvalTimeoutMinutes'),
-		replies: form.get('replies') === 'on',
-		replyWindowHours: form.get('replyWindowHours'),
-	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes', 'replyWindowHours']) {
-		if (editable[key] === null) delete editable[key];
+// Settings screen tabs and the fields each one saves. A tab saves only its own
+// fields, so an unchecked box on one tab never switches off something on another.
+export const SETTINGS_TABS = {
+	display: ['language', 'orientation', 'columns', 'fontScale', 'refreshSeconds', 'color', 'showDiagnostics'],
+	cards: ['cardFields', 'hideIdleAfterHours'],
+	replies: ['templates', 'replies', 'replyWindowHours', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes'],
+	alerts: ['alertOn', 'macSound', 'macNotification', 'readerFlash', 'macSoundName', 'quietHours'],
+	limits: ['showLimits', 'usageSource', 'usageApiMinutes'],
+};
+const CHECKBOXES = ['color', 'showDiagnostics', 'replies', 'macSound', 'macNotification', 'readerFlash', 'showLimits'];
+const LISTS = ['cardFields', 'alertOn'];
+
+// Reply buttons edited on the reader: rows of text fields plus remove / move-up
+// buttons and one field for a new button. Empty rows disappear.
+export function templatesFromForm(form, current) {
+	if (form.get('reset') !== null) return [];
+	let list = form.getAll('template').map((x) => x.trim());
+	const remove = form.get('remove');
+	if (remove !== null) list.splice(Number(remove), 1);
+	const up = Number(form.get('up'));
+	if (form.get('up') !== null && up > 0 && up < list.length) [list[up - 1], list[up]] = [list[up], list[up - 1]];
+	const added = (form.get('newTemplate') || '').trim();
+	if (added) list.push(added);
+	list = list.filter(Boolean);
+	return list.length || form.has('template') ? list : current;
+}
+
+// Applies one tab of the settings form. Network, binary path and token are
+// never editable from the panel.
+export function applySettingsForm(config, form, tab = form.get('tab')) {
+	const fields = SETTINGS_TABS[tab] || [];
+	const editable = {};
+	for (const key of fields) {
+		if (key === 'templates') editable.templates = templatesFromForm(form, config.templates);
+		else if (CHECKBOXES.includes(key)) editable[key] = form.get(key) === 'on';
+		else if (LISTS.includes(key)) editable[key] = form.getAll(key);
+		else if (form.get(key) !== null) editable[key] = form.get(key);
 	}
 	return normalize({ ...config, ...editable }, config);
 }
