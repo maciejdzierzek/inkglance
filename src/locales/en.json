@@ -154,7 +154,7 @@
 	"about.method.manual": "Manual install",
 	"about.how.app": "Download the new app from the release page (one-click updates arrive with signed releases).",
 	"about.how.git": "Install from this computer: open Settings → About in the menu-bar app or in a browser on the computer.",
-	"about.how.plugin": "In Claude Code run: /plugin update inkglance, then /inkglance:setup.",
+	"about.how.plugin": "In a terminal: claude plugin marketplace update inkglance, then claude plugin update inkglance@inkglance; restart Claude Code and run /inkglance:setup.",
 	"about.how.manual": "Download the new version from the release page.",
 	"summary.finished": "done",
 	"section.finished": "Done · your turn",

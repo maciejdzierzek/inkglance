@@ -30,18 +30,18 @@ is plain HTML and works in any browser.
 ## What it shows
 
 - **Four tiles** at the top, readable from across the desk: waiting for you,
-  done (your turn), working, idle. A tile that wants you is filled red or
-  green.
+  done (your turn), working, idle. A tile that wants you is filled with its
+  color.
 - **One board of cards**, most urgent first, packed into columns without gaps.
-  Every card has a state band with an icon and the time:
-  - **Waiting** (red): permission prompts and Claude's questions, answerable
+  Active cards have a colored state band with an icon and the time:
+  - **Waiting**: permission prompts and Claude's questions, answerable
     right on the reader - *Allow* / *Deny*, or tap an option.
-  - **Done · your turn** (green): the session's turn ended and it waits for
+  - **Done · your turn**: the session's turn ended and it waits for
     your next message. A big counter ("12 min ago"), one-tap replies, and
     *Later* to put it aside until its next turn ends. The reader flashes, the
     computer plays a sound, the menu-bar icon shows `✓2` - the nudge to switch
     windows.
-  - **Working** (blue): current tool and last prompt.
+  - **Working**: current tool and last prompt.
   - **Idle**: two quiet lines; long-forgotten sessions collapse into one.
 - **Per session** (you choose which): title, where it runs (Terminal, VS Code,
   Claude app), what it waits for, current tool, last prompt, model and effort,
@@ -49,8 +49,11 @@ is plain HTML and works in any browser.
 - **Plan limits** on one row: 5-hour and weekly usage, forecast at the current
   pace ("runs out ~Sat 05:18") and reset; tap for the **limits screen** with
   charts.
-- Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
-  English and Polish. Every setting is a big button - nothing to type on e-ink.
+- **Colors you pick** for each state (color e-ink shows bright colors best;
+  defaults are magenta, green and blue, and a color test page helps choose),
+  or monochrome.
+- Fullscreen, 1-3 columns, landscape, text size, English and Polish. Settings
+  are big buttons - the only typing is for your own reply buttons.
 
 ## Requirements
 
@@ -70,11 +73,18 @@ you every hook twice.
 
 ### A. As a Claude Code plugin (macOS, Linux)
 
-In Claude Code (terminal; in VS Code and the desktop app you can also add
-plugins from the plugin menu):
+In a Claude Code session (terminal, VS Code or the desktop app):
 
 ```
-/plugin install inkglance --marketplace maciejdzierzek/inkglance
+/plugin marketplace add maciejdzierzek/inkglance
+/plugin install inkglance@inkglance
+```
+
+or in one line from a terminal:
+`claude plugin install inkglance --marketplace maciejdzierzek/inkglance`.
+Restart Claude Code, then run:
+
+```
 /inkglance:setup
 ```
 
@@ -97,6 +107,8 @@ Prefer to be guided? Open Claude Code in the folder and say *"Follow
 commands/setup.md to set up InkGlance for me"*.
 
 ### Try it first, without touching Claude Code
+
+In a clone (step B without `hooks:install`):
 
 ```sh
 npm run demo              # made-up sessions on port 4800; prints the address
@@ -127,9 +139,11 @@ again.
 npm run tray:install   # builds InkGlance.app, installs it to ~/Applications, opens it
 ```
 
-Building needs Rust and the Xcode command-line tools; the app runs the server
-with your Node. Ready-made downloads come with the first release (unsigned at
-first: macOS will ask you to confirm opening it).
+Or download it from [Releases](https://github.com/maciejdzierzek/inkglance/releases)
+(macOS `.dmg`; a Windows installer as a preview). The builds are not signed
+yet: macOS asks you to confirm opening the app (right-click → *Open*), Windows
+SmartScreen asks too. Building yourself needs Rust and the Xcode command-line
+tools. Either way, the app runs the server with your own Node.
 
 An eye icon in the menu bar - with the number of sessions waiting for you and
 `✓N` for finished turns - and a menu: status, the address for the reader, *Open
@@ -251,6 +265,7 @@ binary path and token can also be changed on the panel's **Settings** screen.
 | `hideIdleAfterHours` | `24` | Collapse idle sessions older than this (0 = never) |
 | `fontScale` | `1` | `0.875` to `1.5` |
 | `color` | `true` | `false` for monochrome screens |
+| `colorNeedsYou`, `colorFinished`, `colorWorking` | `#ff00ff`, `#00c853`, `#2196f3` | State colors, any `#rrggbb`; pick them on the reader in Settings → Display |
 | `showDiagnostics` | `true` | Viewport and browser line in the footer, also reported to the log |
 | `alertOn` | `["needsYou", "finished"]` | What to alert on |
 | `macSound`, `macSoundName` | `true`, `Glass` | Sound on the computer: `Glass`, `Ping`, `Submarine`, `Hero` |
@@ -286,9 +301,10 @@ a badge in the panel, in Settings → About and in the menu-bar app's menu.
   `~/.local/share/inkglance`): *Install* in Settings → About, on the computer
   itself, runs `git pull --ff-only` and restarts the panel. Note: this brings
   the latest commit of your branch, not exactly the release.
-- **Plugin hooks**: `/plugin update inkglance` (or the plugin menu). Plugins from
-  other authors do not update automatically by default. Run `/inkglance:setup`
-  afterwards to update the server too.
+- **Plugin hooks**: `claude plugin marketplace update inkglance`, then
+  `claude plugin update inkglance@inkglance` (or the `/plugin` menu) and
+  restart Claude Code. Plugins from other authors do not update automatically
+  by default. Run `/inkglance:setup` afterwards to update the server too.
 - **Menu-bar app**: the menu item opens the release page; download and replace
   the app. One-click signed updates are planned.
 
@@ -352,8 +368,9 @@ See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 - **Does it work over the internet?** Not by design. Over a VPN such as
   Tailscale it works like at home (add the name to `allowedHosts` if you use
   one).
-- **Does it slow Claude Code down?** No: hooks wait in the background and give
-  up in about a second when the panel does not answer.
+- **Does it slow Claude Code down?** No. When the panel is not running, the
+  hooks exit at once. Replies wait in the background; permission requests are
+  held only while you are away from the keyboard (the default).
 
 ## Troubleshooting
 
@@ -375,8 +392,8 @@ See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## Uninstall
 
-1. Hooks: `/plugin uninstall inkglance` (plugin) or `npm run hooks:uninstall`
-   (manual).
+1. Hooks: `claude plugin uninstall inkglance@inkglance` (plugin) or
+   `npm run hooks:uninstall` (manual).
 2. The app: switch off *Open at login*, *Quit* it from its menu, delete
    `~/Applications/InkGlance.app`. Or the service: `npm run service:uninstall`.
 3. Files: `~/.local/share/inkglance` (plugin's server), `~/.config/inkglance/`
@@ -399,7 +416,8 @@ See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ```sh
 npm test          # unit tests
-npm run check     # private-data guard, secret scan (gitleaks), tests
+npm run lint      # ESLint + Knip (unused files and exports)
+npm run check     # private-data guard, gitleaks, lint, ShellCheck, tests (runs before every push)
 npm run demo      # the panel with made-up data, for screenshots
 git config core.hooksPath .githooks   # once per clone
 ```

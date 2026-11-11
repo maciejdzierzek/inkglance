@@ -4,7 +4,7 @@
 //   app      the menu-bar app (server bundled inside it): download the new app
 //            (Tauri's signed updater once release signing is set up)
 //   git      a git checkout: `git pull --ff-only`, then restart the panel
-//   plugin   Claude Code plugin: `/plugin update inkglance` (Claude Code's job)
+//   plugin   Claude Code plugin: `claude plugin update inkglance@inkglance` (Claude Code's job)
 //
 // The check sends one anonymous request to the GitHub API (no identifiers) and can
 // be switched off (`updateCheck: false`).

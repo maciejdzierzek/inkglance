@@ -154,7 +154,7 @@
 	"about.method.manual": "Instalacja ręczna",
 	"about.how.app": "Pobierz nową aplikację ze strony wydania (aktualizacja jednym kliknięciem przyjdzie z podpisanymi wydaniami).",
 	"about.how.git": "Zainstaluj z tego komputera: Ustawienia → O aplikacji w aplikacji w pasku menu albo w przeglądarce na komputerze.",
-	"about.how.plugin": "W Claude Code wpisz: /plugin update inkglance, potem /inkglance:setup.",
+	"about.how.plugin": "W terminalu: claude plugin marketplace update inkglance, potem claude plugin update inkglance@inkglance; uruchom Claude Code ponownie i wpisz /inkglance:setup.",
 	"about.how.manual": "Pobierz nową wersję ze strony wydania.",
 	"summary.finished": "gotowe",
 	"section.finished": "Skończyły · Twoja kolej",

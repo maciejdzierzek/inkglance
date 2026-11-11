@@ -33,7 +33,7 @@
 ## Plugin
 
 The Claude Code plugin is the repository itself (`.claude-plugin/`). Users get
-new versions with `/plugin update inkglance`. Validate before a release:
+new versions with `claude plugin update inkglance@inkglance`. Validate before a release:
 `claude plugin validate .`
 
 ## Third-party notices
