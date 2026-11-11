@@ -113,5 +113,13 @@
 	"settings.replies": "przyciski odpowiedzi przy skończonych sesjach",
 	"settings.replyWindowHours": "Czekaj na odpowiedź z czytnika do",
 	"question.badge": "PYTANIE",
-	"question.send": "Odpowiedz"
+	"question.send": "Odpowiedz",
+	"nav.limits": "Limity",
+	"charts.week": "Ten tydzień",
+	"charts.day": "Limit 5-godzinny, ostatnie 24 godziny",
+	"charts.weeks": "Szczyt tygodnia",
+	"charts.weeksNote": "Najwyższe zużycie w każdym tygodniu (data = początek tygodnia). Pusty słupek to bieżący tydzień.",
+	"charts.empty": "Brak historii limitów. Pojawi się po pierwszych odczytach.",
+	"charts.tokens": "Wygenerowane tokeny na godzinę, ostatnie 24 h ({total})",
+	"limits.expired": "nowe okno, czekam na odczyt"
 }

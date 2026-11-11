@@ -25,6 +25,9 @@ is plain HTML and works in any browser.
   context size, output tokens, git branch, last activity, folder.
 - **Plan limits**: 5-hour and weekly usage, reset time, and a forecast at the
   current pace ("runs out ~21:10").
+- **Limits screen** with charts: this week's usage with the projection to the
+  reset, output tokens per hour over the last 24 hours (from transcripts, so it
+  needs no limits source), and the weekly peak of recent weeks.
 - **Alerts** when a session starts waiting (optionally also when it finishes):
   sound or notification on the computer, a screen flash on the reader, quiet
   hours.
@@ -235,7 +238,7 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 
 1. Session list, settings, alerts, plan limits - **done**
 2. Allow / deny permission requests, one-tap replies - **done**
-3. Usage charts from the limits history
+3. Usage charts - **done**
 4. Answer Claude's multiple-choice questions from the reader - **done**
 5. Jump to the session's window on the computer
 

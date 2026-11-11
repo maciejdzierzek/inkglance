@@ -10,6 +10,7 @@ import { t, relativeTime, clockTime } from './i18n.js';
 import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
+import { lineChart, barChart } from './charts.js';
 
 export const esc = (value) =>
 	String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -38,6 +39,8 @@ const ICONS = {
 		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/></svg>',
 	refresh:
 		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M20 11a8 8 0 1 0-2.3 5.7"/><path fill="currentColor" d="M21 4v7h-7z"/></svg>',
+	limits:
+		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M3 20h18M6 17V11M11 17V5M16 17v-8M21 17v-4"/></svg>',
 	back: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M15 4l-8 8 8 8"/></svg>',
 };
 
@@ -130,8 +133,10 @@ function layout(ctx, { title, active, summary, body, live }) {
 	const refreshButton = live
 		? `<a class="icon" href="${esc(href(ctx.path, ctx.keepParams))}" data-live title="${esc(t(lang, 'nav.refresh'))}">${ICONS.refresh}</a>`
 		: '';
+	const limitsButton =
+		active === 'sessions' ? `<a class="icon" href="${esc(href('/limits'))}" title="${esc(t(lang, 'nav.limits'))}">${ICONS.limits}</a>` : '';
 	const right =
-		active === 'settings'
+		active === 'settings' || active === 'limits'
 			? `<a class="icon" href="${esc(href('/'))}" title="${esc(t(lang, 'nav.back'))}">${ICONS.back}<span>${esc(t(lang, 'nav.back'))}</span></a>`
 			: `<a class="icon" href="${esc(href('/settings'))}" title="${esc(t(lang, 'nav.settings'))}">${ICONS.settings}</a>`;
 	const footer = [
@@ -155,6 +160,7 @@ ${live ? `<noscript><meta http-equiv="refresh" content="${config.refreshSeconds}
 <div class="bar-left">${summary}</div>
 <div class="bar-right">
 ${refreshButton}
+${limitsButton}
 <button type="button" class="icon" id="fs" hidden title="${esc(t(lang, 'nav.fullscreen'))}">${ICONS.fullscreen}</button>
 ${right}
 </div>
@@ -241,6 +247,10 @@ function limitsStrip(ctx, usage) {
 	const row = (key) => {
 		const w = usage[key];
 		if (!w) return '';
+		// The window has reset since this reading: its number no longer applies.
+		if (w.resetAt && w.resetAt <= ctx.now) {
+			return `<div class="limit"><span class="limit-name">${esc(t(lang, 'limits.' + key))}</span><span class="meter"><span style="width:0%"></span></span><b>–</b><span class="limit-note">${esc(t(lang, 'limits.expired'))}</span></div>`;
+		}
 		const pct = Math.round(w.used * 100);
 		const f = forecast(w, PERIODS[key], ctx.now);
 		const notes = [];
@@ -251,7 +261,7 @@ function limitsStrip(ctx, usage) {
 		return `<div class="limit"><span class="limit-name">${esc(t(lang, 'limits.' + key))}</span><span class="meter${level}"><span style="width:${Math.min(100, pct)}%"></span></span><b>${pct}%</b><span class="limit-note">${esc(notes.join(' · '))}</span></div>`;
 	};
 	const age = usage.observedAt ? relativeTime(lang, usage.observedAt, ctx.now) : '';
-	return `<div class="limits">${row('fiveHour')}${row('sevenDay')}<div class="limit-age">${esc(t(lang, 'limits.age', { when: age }))}</div></div>`;
+	return `<a class="limits" href="${esc(makeHref(ctx)('/limits'))}">${row('fiveHour')}${row('sevenDay')}<div class="limit-age">${esc(t(lang, 'limits.age', { when: age }))}</div></a>`;
 }
 
 // Permission requests held for the reader: what is asked, by which session,
@@ -304,6 +314,54 @@ ${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 
 		})
 		.join('\n');
 	return `<h2>${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
+}
+
+// Limits screen: the strip, then three charts with one series each.
+export function limitsPage(ctx, usage, charts) {
+	const lang = ctx.config.language;
+	const day = (ms, opts) => new Intl.DateTimeFormat(lang, opts).format(new Date(ms));
+	const parts = [limitsStrip(ctx, usage).replace(/^<a class="limits"[^>]*>/, '<div class="limits">').replace(/<\/a>$/, '</div>')];
+	if (charts.week?.points.length) {
+		const ticks = [];
+		for (let t = charts.week.from; t <= charts.week.to; t += 86400000) ticks.push({ t, label: day(t, { weekday: 'short' }) });
+		const f = usage?.sevenDay ? forecast(usage.sevenDay, PERIODS.sevenDay, ctx.now) : null;
+		parts.push(
+			`<h2>${esc(t(lang, 'charts.week'))}</h2>` +
+				lineChart({
+					...charts.week,
+					projection: f ? { t: charts.week.to, v: f.atReset } : null,
+					xTicks: ticks,
+					title: t(lang, 'charts.week'),
+				}),
+		);
+	}
+	if (charts.tokens?.some((h) => h.tokens > 0)) {
+		const total = charts.tokens.reduce((sum, h) => sum + h.tokens, 0);
+		const bars = charts.tokens.map((h, i) => ({
+			v: h.tokens,
+			current: i === charts.tokens.length - 1,
+			label: new Date(h.t).getHours() % 6 === 0 ? day(h.t, { hour: '2-digit', minute: '2-digit' }) : '',
+		}));
+		parts.push(
+			`<h2>${esc(t(lang, 'charts.tokens', { total: compact(lang, total) }))}</h2>` +
+				barChart({ bars, format: (v) => compact(lang, v), title: t(lang, 'charts.tokens', { total: compact(lang, total) }) }),
+		);
+	}
+	// The 5-hour line needs a few readings to say anything.
+	if (charts.day.points.length >= 4) {
+		const ticks = [];
+		const start = Math.ceil(charts.day.from / (6 * 3600000)) * 6 * 3600000;
+		for (let t = start; t <= charts.day.to; t += 6 * 3600000) ticks.push({ t, label: day(t, { hour: '2-digit', minute: '2-digit' }) });
+		parts.push(`<h2>${esc(t(lang, 'charts.day'))}</h2>` + lineChart({ ...charts.day, xTicks: ticks, title: t(lang, 'charts.day') }));
+	}
+	if (charts.weeks.length > 1) {
+		const bars = charts.weeks.map((w) => ({ ...w, label: day(w.resetAt - PERIODS.sevenDay, { day: 'numeric', month: 'numeric' }) }));
+		parts.push(`<h2>${esc(t(lang, 'charts.weeks'))}</h2>` + barChart({ bars, title: t(lang, 'charts.weeks') }) + `<p class="muted small">${esc(t(lang, 'charts.weeksNote'))}</p>`);
+	}
+	if (parts.length === 1) parts.push(`<p class="empty">${esc(t(lang, 'charts.empty'))}</p>`);
+	const body = `<div id="main">${parts.join('\n')}</div>`;
+	const summary = `<span class="bar-title">${esc(t(lang, 'nav.limits'))}</span>`;
+	return layout(ctx, { title: t(lang, 'nav.limits'), active: 'limits', summary, body, live: true });
 }
 
 export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList, canReply }, { showStale }) {

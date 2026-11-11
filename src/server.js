@@ -9,12 +9,14 @@ import { hostname, networkInterfaces } from 'node:os';
 import { timingSafeEqual } from 'node:crypto';
 import { loadConfig, saveConfig, applySettingsForm, configPath } from './config.js';
 import { listSessions, groupSessions } from './sessions.js';
-import { sessionsPage, settingsPage, pairingPage } from './render.js';
+import { sessionsPage, settingsPage, pairingPage, limitsPage } from './render.js';
 import { createPairing, makeSystemNotify } from './pairing.js';
 import { t } from './i18n.js';
 import { createWatcher } from './watcher.js';
 import { createAlerts, playSound, inQuietHours } from './alerts.js';
-import { getUsage } from './usage.js';
+import { getUsage, extensionHistory } from './usage.js';
+import { record as recordUsage, historyFor, chartData } from './history.js';
+import { hourlyTokens } from './activity.js';
 import { createApprovals } from './approvals.js';
 import { createReplies, wakeText } from './replies.js';
 
@@ -180,6 +182,7 @@ async function handle(req, res) {
 		const data = await listSessions(config, ctx.now);
 		const groups = groupSessions(data.sessions, config, ctx.now);
 		const usage = config.showLimits ? await getUsage(config, ctx.now) : null;
+		recordUsage(usage);
 		const extras = { usage, approvals: approvals.list(), canReply: (id) => replies.isOpen(id) };
 		return html(res, sessionsPage(ctx, data, groups, extras, { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
@@ -192,6 +195,15 @@ async function handle(req, res) {
 			flash: config.readerFlash && config.alertOn.includes('needsYou') && !inQuietHours(config.quietHours),
 		});
 		return send(res, 200, body, { 'Content-Type': 'application/json' });
+	}
+
+	if (req.method === 'GET' && url.pathname === '/limits') {
+		const usage = await getUsage({ ...config, usageSource: config.usageSource === 'off' ? 'auto' : config.usageSource }, ctx.now);
+		recordUsage(usage);
+		const raw = usage?.source === 'extension' ? await extensionHistory() : null;
+		const charts = chartData(historyFor(raw), usage, ctx.now);
+		charts.tokens = await hourlyTokens(24, ctx.now).catch(() => []);
+		return html(res, limitsPage(ctx, usage, charts), cookie);
 	}
 
 	if (url.pathname === '/settings') {

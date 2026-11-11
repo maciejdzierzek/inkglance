@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Limits screen with charts: this week + projection, output tokens per hour
+  (24 h, from transcripts), weekly peaks. History from the Claude Code Usage
+  extension, or recorded by the panel for other sources.
+- A limits window that has reset since the last reading shows "new window"
+  instead of the old number.
+
 - Claude's multiple-choice questions (AskUserQuestion) on the reader: options
   as buttons, the answer fills the tool's `answers` field - no dialog, a normal
   answer for Claude. Same "when away" rule as permission requests.

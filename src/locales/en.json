@@ -113,5 +113,13 @@
 	"settings.replies": "reply buttons on finished sessions",
 	"settings.replyWindowHours": "Keep replies open for",
 	"question.badge": "QUESTION",
-	"question.send": "Answer"
+	"question.send": "Answer",
+	"nav.limits": "Limits",
+	"charts.week": "This week",
+	"charts.day": "5-hour limit, last 24 hours",
+	"charts.weeks": "Weekly peak",
+	"charts.weeksNote": "Highest weekly usage per week (date = start of the week). The hollow bar is the current week.",
+	"charts.empty": "No limits history yet. It appears after the first readings.",
+	"charts.tokens": "Output tokens per hour, last 24 h ({total})",
+	"limits.expired": "new window, waiting for a reading"
 }

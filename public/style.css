@@ -119,3 +119,18 @@ html.flash { filter: invert(1); background: #000; }
 .option span { display: block; text-align: left; }
 .option small { display: block; font-size: 0.75em; color: #333; font-weight: normal; margin-top: 0.1em; }
 .option input:checked + span small { color: #ddd; }
+
+/* Charts (SVG): thick black marks, recessive grid. */
+a.limits { display: block; text-decoration: none; color: #000; }
+.chart { display: block; margin: 0.2em 0 0.3em; font-family: -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; }
+.chart .line { fill: none; stroke: #000; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.chart .projection { fill: none; stroke: #000; stroke-width: 2; stroke-dasharray: 6 5; }
+.chart .dot { fill: #000; stroke: #fff; stroke-width: 2; }
+.chart .grid { stroke: #999; stroke-width: 1; stroke-dasharray: 2 4; }
+.chart .grid-max { stroke: #000; stroke-width: 1.5; }
+.chart .axis { stroke: #000; stroke-width: 1.5; }
+.chart .tick { font-size: 13px; fill: #333; }
+.chart .value { font-size: 14px; font-weight: bold; fill: #000; }
+.chart .bar { fill: #000; }
+.chart .bar-current { fill: #fff; stroke: #000; stroke-width: 2.5; }
+.color .chart .grid-max { stroke: #c8102e; }

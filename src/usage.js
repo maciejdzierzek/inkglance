@@ -64,15 +64,21 @@ export function parseExtension(json) {
 	};
 }
 
-let extCache = { mtime: 0, value: null };
+let extCache = { mtime: 0, value: null, raw: null };
 async function fromExtension() {
 	const file = extensionFile();
 	const s = await stat(file).catch(() => null);
 	if (!s) return null;
 	if (s.mtimeMs !== extCache.mtime) {
-		extCache = { mtime: s.mtimeMs, value: parseExtension(JSON.parse(await readFile(file, 'utf8'))) };
+		const raw = JSON.parse(await readFile(file, 'utf8'));
+		extCache = { mtime: s.mtimeMs, value: parseExtension(raw), raw };
 	}
 	return extCache.value;
+}
+
+// The extension's full observation history (for charts), or null.
+export async function extensionHistory() {
+	return (await fromExtension().catch(() => null)) ? extCache.raw : null;
 }
 
 // --- statusline ---------------------------------------------------------------
@@ -149,6 +155,7 @@ async function fromApi(minutes, now) {
 			const wait = Number(res.headers.get('retry-after')) || 3600;
 			api.blockedUntil = now + wait * 1000;
 			api.error = `rate limited for ${Math.round(wait / 60)} min`;
+			console.log(new Date(now).toISOString().slice(11, 19), 'USAGE api', api.error);
 			return api.value;
 		}
 		if (!res.ok) {
