@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import { classify, groupSessions, transcriptPath, dismiss } from '../src/sessions.js';
 
 test('classify maps documented fields to groups', () => {
@@ -19,7 +20,9 @@ test('old idle sessions are collapsed', () => {
 });
 
 test('transcript path follows the documented folder rule', () => {
-	assert.equal(transcriptPath('/srv/my.app', 'abc', '/h'), '/h/.claude/projects/-srv-my-app/abc.jsonl');
+	// join() uses the platform's separator (backslashes on Windows).
+	assert.equal(transcriptPath('/srv/my.app', 'abc', '/h'), join('/h', '.claude', 'projects', '-srv-my-app', 'abc.jsonl'));
+	assert.equal(transcriptPath('C:\\work\\my app', 'abc', '/h'), join('/h', '.claude', 'projects', 'C--work-my-app', 'abc.jsonl'));
 });
 
 test('an idle session whose turn ended recently is "finished" until dismissed or too old', () => {
