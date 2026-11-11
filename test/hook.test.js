@@ -16,6 +16,8 @@ const run = (args, env, input) =>
 		child.stdout.on('data', (d) => (out += d));
 		child.stderr.on('data', (d) => (err += d));
 		child.on('close', (code) => resolve({ code, out, err }));
+		// The hook may exit before reading its input (that is the fail-open path).
+		child.stdin.on('error', () => {});
 		child.stdin.end(input);
 	});
 
