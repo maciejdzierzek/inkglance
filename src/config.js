@@ -10,6 +10,9 @@ import { dirname, join } from 'node:path';
 export const LANGUAGES = ['en', 'pl'];
 export const FONT_SCALES = [0.875, 1, 1.125, 1.25, 1.5];
 export const COLUMNS = [1, 2, 3];
+// 'auto' follows the browser (readers that rotate on their own); 'left'/'right'
+// rotate the page for a reader turned on its side whose browser stays portrait.
+export const ORIENTATIONS = ['auto', 'left', 'right'];
 // Fields a session card can show, in display order. The title, status and
 // project are always shown.
 export const CARD_FIELDS = ['waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'branch', 'times', 'path'];
@@ -23,6 +26,7 @@ export const DEFAULTS = Object.freeze({
 	language: 'en',
 	refreshSeconds: 60,
 	columns: 2,
+	orientation: 'auto',
 	cardFields: ['waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'times'],
 	hideIdleAfterHours: 24,
 	color: true,
@@ -60,6 +64,7 @@ export function normalize(input = {}, base = DEFAULTS) {
 		language: pick(LANGUAGES, input.language, base.language),
 		refreshSeconds: clampInt(input.refreshSeconds, 15, 3600, base.refreshSeconds),
 		columns: COLUMNS.includes(Number(input.columns)) ? Number(input.columns) : base.columns,
+		orientation: pick(ORIENTATIONS, input.orientation, base.orientation),
 		cardFields: Array.isArray(input.cardFields)
 			? CARD_FIELDS.filter((f) => input.cardFields.includes(f))
 			: base.cardFields,
@@ -104,6 +109,7 @@ export function applySettingsForm(config, form) {
 		language: form.get('language'),
 		refreshSeconds: form.get('refreshSeconds'),
 		columns: form.get('columns'),
+		orientation: form.get('orientation'),
 		hideIdleAfterHours: form.get('hideIdleAfterHours'),
 		fontScale: form.get('fontScale'),
 		// Unchecked checkboxes are absent from a submitted form.
@@ -111,7 +117,7 @@ export function applySettingsForm(config, form) {
 		color: form.get('color') === 'on',
 		showDiagnostics: form.get('showDiagnostics') === 'on',
 	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'hideIdleAfterHours', 'fontScale']) {
+	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale']) {
 		if (editable[key] === null) delete editable[key];
 	}
 	return normalize({ ...config, ...editable }, config);

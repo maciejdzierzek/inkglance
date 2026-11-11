@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 
 export const esc = (value) =>
@@ -103,7 +103,7 @@ function layout(ctx, { title, active, summary, body, live }) {
 		.filter(Boolean)
 		.join(' · ');
 	return `<!DOCTYPE html>
-<html lang="${lang}" style="font-size:${Math.round(16 * config.fontScale * 10) / 10}px">
+<html lang="${lang}" class="rot-${config.orientation}" style="font-size:${Math.round(16 * config.fontScale * 10) / 10}px">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -230,6 +230,7 @@ export function settingsPage(ctx, { configFile }) {
 <input type="hidden" name="t" value="${esc(config.token)}">
 ${group('language', LANGUAGES.map((l) => [l, t(lang, 'lang.' + l)]), config.language)}
 ${group('refreshSeconds', refreshOptions, config.refreshSeconds)}
+${group('orientation', ORIENTATIONS.map((o) => [o, t(lang, 'orientation.' + o)]), config.orientation)}
 ${group('columns', COLUMNS.map((c) => [c, String(c)]), config.columns)}
 ${fields}
 ${group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale)}

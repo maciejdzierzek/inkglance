@@ -55,5 +55,9 @@
 	"field.branch": "gałąź git",
 	"field.times": "ostatnia aktywność",
 	"field.path": "ścieżka katalogu",
-	"pair.delete": "Usuń"
+	"pair.delete": "Usuń",
+	"settings.orientation": "Orientacja",
+	"orientation.auto": "automatyczna",
+	"orientation.left": "obrót w lewo",
+	"orientation.right": "obrót w prawo"
 }

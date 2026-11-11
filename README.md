@@ -68,6 +68,7 @@ created on first start. Display preferences can also be changed on the panel's
 | `language` | `en` | Interface language: `en`, `pl` |
 | `refreshSeconds` | `60` | How often the page reloads (15-3600). E-ink does not need more |
 | `columns` | `2` | Card columns: `1`, `2`, `3` |
+| `orientation` | `auto` | `auto` follows the browser; `left` / `right` rotate the page for a reader on its side whose browser stays portrait |
 | `cardFields` | see below | Which details cards show: `waitingFor`, `activity`, `lastPrompt`, `model`, `context`, `tokens`, `branch`, `times`, `path` |
 | `hideIdleAfterHours` | `24` | Collapse idle sessions older than this (0 = never) |
 | `fontScale` | `1` | Text size: `0.875` to `1.5` |

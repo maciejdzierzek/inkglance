@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Orientation setting: automatic, or rotate the page left/right for a reader
+  standing on its side whose browser stays portrait.
+
 ## 0.1.0 - unreleased
 
 - Richer session cards from transcripts (best-effort): title, last prompt,

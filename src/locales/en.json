@@ -55,5 +55,9 @@
 	"field.branch": "git branch",
 	"field.times": "last activity",
 	"field.path": "folder path",
-	"pair.delete": "Delete"
+	"pair.delete": "Delete",
+	"settings.orientation": "Orientation",
+	"orientation.auto": "automatic",
+	"orientation.left": "rotate left",
+	"orientation.right": "rotate right"
 }

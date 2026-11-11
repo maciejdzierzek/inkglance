@@ -73,3 +73,12 @@ legend { font-weight: bold; margin-bottom: 0.3em; padding: 0; }
 .keypad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4em; }
 .key { font: inherit; font-size: 1.8em; font-weight: bold; padding: 0.35em 0; border: 2px solid #000; background: #fff; color: #000; cursor: pointer; }
 .key-fn { font-size: 1em; }
+
+/* Landscape for a reader standing on its side whose browser stays portrait: the
+   whole app is drawn rotated inside a fixed box with its own scrolling.
+   "left" = reader turned counter-clockwise (top of the page on its right edge). */
+.rot-left, .rot-right { height: 100%; overflow: hidden; }
+.rot-left body, .rot-right body { height: 100%; overflow: hidden; padding: 0; }
+.rot-left #app, .rot-right #app { position: fixed; top: 0; left: 0; width: 100vh; height: 100vw; overflow-y: auto; padding: 0.35em 0.5em 0.8em; transform-origin: top left; }
+.rot-left #app { transform: translateX(100vw) rotate(90deg); }
+.rot-right #app { transform: translateY(100vh) rotate(-90deg); }
