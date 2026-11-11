@@ -72,5 +72,21 @@
 	"settings.quietHours": "Quiet hours",
 	"alert.needsYou": "inkai: waiting for you",
 	"alert.finished": "inkai: finished",
-	"settings.quietOff": "off"
+	"settings.quietOff": "off",
+	"limits.fiveHour": "5 hours",
+	"limits.sevenDay": "Week",
+	"limits.reset": "resets {when}",
+	"limits.forecast": "forecast {pct}%",
+	"limits.fullAt": "runs out ~{when}",
+	"limits.age": "limits as of {when}",
+	"limits.unavailable": "Limits unavailable: {reason}",
+	"settings.limits": "Plan limits",
+	"settings.showLimits": "show limits",
+	"settings.usageSource": "Limits source",
+	"usageSource.auto": "automatic",
+	"usageSource.extension": "VS Code extension",
+	"usageSource.statusline": "status line",
+	"usageSource.api": "Anthropic",
+	"usageSource.off": "off",
+	"settings.usageApiMinutes": "Ask Anthropic at most every"
 }

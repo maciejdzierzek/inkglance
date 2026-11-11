@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Plan limits strip: 5-hour and weekly usage, reset time, forecast. Sources:
+  Claude Code Usage extension file, status line snapshots, claude.ai usage
+  endpoint (rare, Retry-After aware).
+- `src/statusline.js`: optional Claude Code status line that also feeds limits.
+
 - Alerts when a session starts waiting (or, optionally, finishes its turn):
   sound and/or notification on the Mac, screen flash on the reader, quiet hours.
   A background watcher checks sessions every 10 s; readers poll a tiny state

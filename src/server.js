@@ -13,6 +13,7 @@ import { createPairing, makeSystemNotify } from './pairing.js';
 import { t } from './i18n.js';
 import { createWatcher } from './watcher.js';
 import { createAlerts, playSound, inQuietHours } from './alerts.js';
+import { getUsage } from './usage.js';
 
 const COOKIE = 'inkai_t';
 const MAX_BODY = 16 * 1024;
@@ -97,7 +98,8 @@ async function handle(req, res) {
 	if (req.method === 'GET' && url.pathname === '/') {
 		const data = await listSessions(config, ctx.now);
 		const groups = groupSessions(data.sessions, config, ctx.now);
-		return html(res, sessionsPage(ctx, data, groups, { showStale: url.searchParams.get('stale') === '1' }), cookie);
+		const usage = config.showLimits ? await getUsage(config, ctx.now) : null;
+		return html(res, sessionsPage(ctx, data, groups, usage, { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
 
 	// Tiny poll for readers: a version that moves when the panel would change,

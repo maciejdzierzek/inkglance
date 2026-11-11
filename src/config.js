@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { MAC_SOUNDS, QUIET_PRESETS } from './alerts.js';
+import { USAGE_SOURCES } from './usage.js';
 
 export const LANGUAGES = ['en', 'pl'];
 export const FONT_SCALES = [0.875, 1, 1.125, 1.25, 1.5];
@@ -21,7 +22,8 @@ export const CARD_FIELDS = ['waitingFor', 'activity', 'lastPrompt', 'model', 'co
 export const REFRESH_PRESETS = [30, 60, 120, 300, 600];
 export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
 export const ALERT_KINDS = ['needsYou', 'finished'];
-export { MAC_SOUNDS, QUIET_PRESETS };
+export { MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES };
+export const USAGE_API_PRESETS = [15, 30, 60];
 
 export const DEFAULTS = Object.freeze({
 	host: '0.0.0.0',
@@ -41,6 +43,9 @@ export const DEFAULTS = Object.freeze({
 	macNotification: false,
 	readerFlash: true,
 	quietHours: 'off',
+	showLimits: true,
+	usageSource: 'auto',
+	usageApiMinutes: 15,
 	claudeBin: 'claude',
 	token: '',
 });
@@ -87,6 +92,9 @@ export function normalize(input = {}, base = DEFAULTS) {
 		macNotification: toBool(input.macNotification, base.macNotification),
 		readerFlash: toBool(input.readerFlash, base.readerFlash),
 		quietHours: pick(QUIET_PRESETS, input.quietHours, base.quietHours),
+		showLimits: toBool(input.showLimits, base.showLimits),
+		usageSource: pick(USAGE_SOURCES, input.usageSource, base.usageSource),
+		usageApiMinutes: clampInt(input.usageApiMinutes, 5, 24 * 60, base.usageApiMinutes),
 		claudeBin: typeof input.claudeBin === 'string' && input.claudeBin ? input.claudeBin : base.claudeBin,
 		token: typeof input.token === 'string' && /^[A-Za-z0-9_-]{16,}$/.test(input.token) ? input.token : base.token,
 	};
@@ -137,8 +145,11 @@ export function applySettingsForm(config, form) {
 		macNotification: form.get('macNotification') === 'on',
 		readerFlash: form.get('readerFlash') === 'on',
 		quietHours: form.get('quietHours'),
+		showLimits: form.get('showLimits') === 'on',
+		usageSource: form.get('usageSource'),
+		usageApiMinutes: form.get('usageApiMinutes'),
 	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours']) {
+	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes']) {
 		if (editable[key] === null) delete editable[key];
 	}
 	return normalize({ ...config, ...editable }, config);

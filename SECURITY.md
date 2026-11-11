@@ -7,6 +7,9 @@ in them, so treat the access token like a password.
 - Every page requires the token (link parameter, then an HttpOnly cookie).
 - The settings form accepts display preferences only; network, binary path and
   token are file-only.
+- Limits from the claude.ai usage endpoint read Claude Code's stored login
+  (macOS Keychain or `~/.claude/.credentials.json`) read-only. The token is sent
+  only to api.anthropic.com, never logged, never refreshed or written back.
 - Do not forward the port or put the panel on the public internet.
 
 Report vulnerabilities privately through GitHub Security Advisories on this

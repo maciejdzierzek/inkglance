@@ -85,3 +85,15 @@ legend { font-weight: bold; margin-bottom: 0.3em; padding: 0; }
 
 /* Reader alert: a few full-screen inversions when a session starts waiting. */
 html.flash { filter: invert(1); background: #000; }
+
+/* Limits strip under the top bar. */
+.limits { margin: 0.25em 0 0.1em; font-size: 0.78em; }
+.limit { display: flex; align-items: center; gap: 0.45em; margin: 0.15em 0; }
+.limit-name { width: 4.6em; flex: none; font-weight: bold; }
+.meter { flex: 0 0 7em; height: 0.75em; border: 2px solid #000; position: relative; overflow: hidden; }
+.meter span { position: absolute; top: 0; left: 0; bottom: 0; background: #000; }
+.color .meter-warm span { background: #b45f06; }
+.color .meter-hot span { background: #c8102e; }
+.limit-note { color: #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.limit-age { color: #555; font-size: 0.9em; }
+.limits-error { color: #333; font-style: italic; }

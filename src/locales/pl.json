@@ -72,5 +72,21 @@
 	"settings.quietHours": "Cisza nocna",
 	"alert.needsYou": "inkai: czeka na Ciebie",
 	"alert.finished": "inkai: skończyła pracę",
-	"settings.quietOff": "wyłączona"
+	"settings.quietOff": "wyłączona",
+	"limits.fiveHour": "5 godzin",
+	"limits.sevenDay": "Tydzień",
+	"limits.reset": "reset {when}",
+	"limits.forecast": "prognoza {pct}%",
+	"limits.fullAt": "skończy się ok. {when}",
+	"limits.age": "limity {when}",
+	"limits.unavailable": "Limity niedostępne: {reason}",
+	"settings.limits": "Limity planu",
+	"settings.showLimits": "pokazuj limity",
+	"settings.usageSource": "Skąd brać limity",
+	"usageSource.auto": "automatycznie",
+	"usageSource.extension": "rozszerzenie VS Code",
+	"usageSource.statusline": "pasek stanu",
+	"usageSource.api": "Anthropic",
+	"usageSource.off": "wyłączone",
+	"settings.usageApiMinutes": "Pytaj Anthropic nie częściej niż co"
 }

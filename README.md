@@ -27,6 +27,16 @@ plain HTML and works in any browser.
   from the session transcript on a best-effort basis: the format is internal
   to Claude Code, so a future version may hide some details, never the list.
 - Fullscreen button; the page updates in place, so fullscreen survives refreshes.
+- Plan limits (5-hour and weekly) with reset time and a forecast at the current
+  pace. Sources, cheapest first: the [Claude Code Usage](https://github.com/ClaudeCodeUsage/ClaudeCodeUsage)
+  VS Code extension's local quota file (no network); snapshots from
+  `src/statusline.js` if you use it as your Claude Code status line (terminal
+  only - the VS Code extension does not run status line commands); and as a
+  last resort the claude.ai usage endpoint with Claude Code's stored login,
+  at most every 15 minutes and honoring Retry-After (it is strictly rate
+  limited).
+- Alerts when a session starts waiting: sound or notification on the Mac,
+  screen flash on the reader, quiet hours.
 - Optional diagnostics line (viewport, pixel ratio, browser) for tuning the
   layout on a new device.
 
@@ -103,7 +113,7 @@ internet. See [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 1. Session list and settings - **done**
-2. Usage limits (5-hour and weekly) with a forecast
+2. Usage limits (5-hour and weekly) with a forecast - **done**; usage charts next
 3. Allow / deny permission prompts from the panel (via Claude Code hooks)
 4. Answer questions and send reply templates when a session finishes
 5. Jump to the session's window on the computer

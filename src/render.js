@@ -7,8 +7,9 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
+import { forecast, PERIODS } from './usage.js';
 
 export const esc = (value) =>
 	String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -200,7 +201,33 @@ ${list.map((s) => card(ctx, s)).join('\n')}
 </div>`;
 }
 
-export function sessionsPage(ctx, data, groups, { showStale }) {
+// Limits strip: one bar per window with %, reset time and a forecast.
+function limitsStrip(ctx, usage) {
+	const lang = ctx.config.language;
+	if (!usage) return '';
+	if (usage.error) return `<div class="limits limits-error">${esc(t(lang, 'limits.unavailable', { reason: usage.error }))}</div>`;
+	const when = (ms) => {
+		const d = new Date(ms);
+		const sameDay = new Date(ctx.now).toDateString() === d.toDateString();
+		return new Intl.DateTimeFormat(lang, sameDay ? { hour: '2-digit', minute: '2-digit' } : { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(d);
+	};
+	const row = (key) => {
+		const w = usage[key];
+		if (!w) return '';
+		const pct = Math.round(w.used * 100);
+		const f = forecast(w, PERIODS[key], ctx.now);
+		const notes = [];
+		if (w.resetAt) notes.push(t(lang, 'limits.reset', { when: when(w.resetAt) }));
+		if (f?.fullAt) notes.push(t(lang, 'limits.fullAt', { when: when(f.fullAt) }));
+		else if (f) notes.push(t(lang, 'limits.forecast', { pct: Math.min(100, Math.round(f.atReset * 100)) }));
+		const level = pct >= 90 || f?.fullAt ? ' meter-hot' : pct >= 70 ? ' meter-warm' : '';
+		return `<div class="limit"><span class="limit-name">${esc(t(lang, 'limits.' + key))}</span><span class="meter${level}"><span style="width:${Math.min(100, pct)}%"></span></span><b>${pct}%</b><span class="limit-note">${esc(notes.join(' · '))}</span></div>`;
+	};
+	const age = usage.observedAt ? relativeTime(lang, usage.observedAt, ctx.now) : '';
+	return `<div class="limits">${row('fiveHour')}${row('sevenDay')}<div class="limit-age">${esc(t(lang, 'limits.age', { when: age }))}</div></div>`;
+}
+
+export function sessionsPage(ctx, data, groups, usage, { showStale }) {
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
 	const idleCount = groups.idle.length + groups.stale.length;
@@ -208,7 +235,7 @@ export function sessionsPage(ctx, data, groups, { showStale }) {
 <span class="sum"><b>${groups.working.length}</b> ${esc(t(lang, 'summary.working'))}</span>
 <span class="sum"><b>${idleCount}</b> ${esc(t(lang, 'summary.idle'))}</span>`;
 
-	let body = '<div id="main">';
+	let body = limitsStrip(ctx, usage) + '<div id="main">';
 	if (data.error) {
 		body += `<div class="error"><b>${esc(t(lang, 'error.title'))}</b><br>${esc(data.error)}</div>`;
 	} else if (!data.sessions.length) {
@@ -275,6 +302,9 @@ ${group('hideIdleAfterHours', idleOptions, config.hideIdleAfterHours)}
 	).join('')}</div></fieldset>
 <fieldset><legend>${esc(t(lang, 'settings.alertHow'))}</legend><div class="choices">${toggle('macSound')}${toggle('macNotification')}${toggle('readerFlash')}</div></fieldset>
 ${group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName)}
+<fieldset><legend>${esc(t(lang, 'settings.limits'))}</legend><div class="choices">${toggle('showLimits')}</div></fieldset>
+${group('usageSource', USAGE_SOURCES.map((u) => [u, t(lang, 'usageSource.' + u)]), config.usageSource)}
+${group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config.usageApiMinutes)}
 ${group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours)}
 <noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>
 </form>
