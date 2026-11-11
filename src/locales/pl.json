@@ -94,5 +94,17 @@
 	"where.claude-vscode": "VS Code",
 	"where.claude-desktop": "aplikacja Claude",
 	"where.sdk-cli": "SDK",
-	"where.sdk-ts": "SDK"
+	"where.sdk-ts": "SDK",
+	"approval.section": "Prośby o zgodę",
+	"approval.badge": "ZGODA",
+	"approval.allow": "Zezwól",
+	"approval.deny": "Odmów",
+	"approval.release": "Na komputerze",
+	"approval.deniedMessage": "Użytkownik odmówił w panelu inkai.",
+	"settings.approvals": "Odpowiadaj na prośby o zgodę z czytnika",
+	"approvals.off": "nigdy",
+	"approvals.away": "gdy mnie nie ma",
+	"approvals.always": "zawsze",
+	"settings.awaySeconds": "„Nie ma mnie” = bez klawiatury i myszy przez",
+	"settings.approvalTimeoutMinutes": "Oddaj komputerowi po"
 }

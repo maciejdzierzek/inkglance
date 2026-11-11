@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Answer permission requests from the reader (Allow / Deny / On computer) via
+  a Claude Code PermissionRequest hook: `npm run hooks:install`. Holds only
+  when you are away (idle keyboard and mouse) by default, hands back when you
+  return or after a timeout, fails open when the panel is down.
+
 - "Where it runs" on cards: Terminal, VS Code, Claude app.
 - Docs: data sources per environment (terminal, VS Code, desktop app), the
   Claude Code Usage extension, status line setup (`npm run statusline:print`),

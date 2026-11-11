@@ -12,8 +12,8 @@ No app to install on the reader, no cable.
 Built and tested on a PocketBook Verse Pro Color (Kaleido 3 color e-ink), but it
 is plain HTML and works in any browser.
 
-> **Status: early (0.1).** Watching sessions, limits and alerts work. Answering
-> permission prompts and replying from the panel are next, see [Roadmap](#roadmap).
+> **Status: early (0.1).** Watching sessions, limits, alerts and answering
+> permission requests work. Replies and templates are next, see [Roadmap](#roadmap).
 
 ## What it shows
 
@@ -28,6 +28,8 @@ is plain HTML and works in any browser.
 - **Alerts** when a session starts waiting (optionally also when it finishes):
   sound or notification on the computer, a screen flash on the reader, quiet
   hours.
+- **Permission requests on the reader**: *Allow*, *Deny* or *On computer*, with
+  the command or file being asked about (see below).
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
   English and Polish. Every setting is a big button - nothing to type on e-ink.
 
@@ -66,6 +68,34 @@ is plain HTML and works in any browser.
      fresh, at most every 15 minutes, and it honors Retry-After - the endpoint is
      undocumented and strictly rate limited (we have seen a one-hour block). The
      token goes only to api.anthropic.com and is never stored or refreshed.
+
+## Answering permission requests from the reader
+
+```sh
+npm run hooks:install     # adds a PermissionRequest hook to ~/.claude/settings.json (with a backup)
+npm run hooks:status
+npm run hooks:uninstall   # removes only inkai's entry (with a backup)
+```
+
+The hook works in the terminal, the VS Code extension and the desktop app.
+One thing to know: while the panel holds a request, Claude Code does not show
+its own permission dialog - it shows it only after the hook finishes. So by
+default (*when I'm away*) inkai holds a request only when your keyboard and
+mouse have been idle for a minute, and hands it back the moment you touch them.
+At your desk you answer on the computer as usual; the reader just shows that a
+session is waiting. Other modes: *always* and *never*.
+
+Safety:
+
+- The hook fails open: panel not running, no config, any error - it exits in
+  milliseconds and Claude Code shows its normal dialog. It never approves
+  anything by itself.
+- *On computer* hands the request back; after a timeout (default 5 minutes) it
+  is handed back automatically.
+- Only Claude Code on the same computer can submit requests (loopback + token);
+  only a paired reader can answer them.
+- If you use Claude Code's auto mode, permission requests are rare; the panel
+  still shows sessions waiting for your input.
 
 ## Requirements
 
@@ -131,6 +161,9 @@ can also be changed on the panel's **Settings** screen.
 | `showLimits` | `true` | Plan limits strip |
 | `usageSource` | `auto` | `auto`, `extension`, `statusline`, `api`, `off` |
 | `usageApiMinutes` | `15` | Minimum minutes between claude.ai usage requests |
+| `approvals` | `away` | Answer permission requests on the reader: `off`, `away`, `always` |
+| `awaySeconds` | `60` | Idle keyboard and mouse time that counts as away |
+| `approvalTimeoutMinutes` | `5` | Hand a request back to the computer after this |
 | `host`, `port` | `0.0.0.0`, `4747` | Where the server listens (file only) |
 | `claudeBin` | `claude` | Path to the Claude Code binary (file only) |
 | `token` | generated | Access token (file only) |
@@ -150,8 +183,8 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 1. Session list, settings, alerts, plan limits - **done**
-2. Usage charts from the limits history
-3. Allow / deny permission prompts from the panel (Claude Code hooks)
+2. Allow / deny permission requests from the reader - **done**
+3. Usage charts from the limits history
 4. Answer questions and send reply templates when a session finishes
 5. Jump to the session's window on the computer
 

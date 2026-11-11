@@ -19,7 +19,7 @@ export function diff(prev, sessions) {
 	return events;
 }
 
-export function createWatcher({ getConfig, list, onEvents }) {
+export function createWatcher({ getConfig, list, onEvents, extraWaiting = () => [] }) {
 	let prev = null;
 	let signature = '';
 	let version = 0;
@@ -49,6 +49,10 @@ export function createWatcher({ getConfig, list, onEvents }) {
 			run();
 			return setInterval(run, WATCH_MS);
 		},
-		state: () => ({ v: version, waiting }),
+		// Something outside the session list changed (e.g. a permission request).
+		bump: () => {
+			version += 1;
+		},
+		state: () => ({ v: version, waiting: [...waiting, ...extraWaiting()] }),
 	};
 }

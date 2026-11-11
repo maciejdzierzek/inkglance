@@ -8,6 +8,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { MAC_SOUNDS, QUIET_PRESETS } from './alerts.js';
 import { USAGE_SOURCES } from './usage.js';
+import { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS } from './approvals.js';
 
 export const LANGUAGES = ['en', 'pl'];
 export const FONT_SCALES = [0.875, 1, 1.125, 1.25, 1.5];
@@ -24,6 +25,7 @@ export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
 export const ALERT_KINDS = ['needsYou', 'finished'];
 export { MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES };
 export const USAGE_API_PRESETS = [15, 30, 60];
+export { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS };
 
 export const DEFAULTS = Object.freeze({
 	host: '0.0.0.0',
@@ -46,6 +48,9 @@ export const DEFAULTS = Object.freeze({
 	showLimits: true,
 	usageSource: 'auto',
 	usageApiMinutes: 15,
+	approvals: 'away',
+	awaySeconds: 60,
+	approvalTimeoutMinutes: 5,
 	claudeBin: 'claude',
 	token: '',
 });
@@ -95,6 +100,9 @@ export function normalize(input = {}, base = DEFAULTS) {
 		showLimits: toBool(input.showLimits, base.showLimits),
 		usageSource: pick(USAGE_SOURCES, input.usageSource, base.usageSource),
 		usageApiMinutes: clampInt(input.usageApiMinutes, 5, 24 * 60, base.usageApiMinutes),
+		approvals: pick(APPROVAL_MODES, input.approvals, base.approvals),
+		awaySeconds: clampInt(input.awaySeconds, 10, 3600, base.awaySeconds),
+		approvalTimeoutMinutes: clampInt(input.approvalTimeoutMinutes, 1, 14, base.approvalTimeoutMinutes),
 		claudeBin: typeof input.claudeBin === 'string' && input.claudeBin ? input.claudeBin : base.claudeBin,
 		token: typeof input.token === 'string' && /^[A-Za-z0-9_-]{16,}$/.test(input.token) ? input.token : base.token,
 	};
@@ -148,8 +156,11 @@ export function applySettingsForm(config, form) {
 		showLimits: form.get('showLimits') === 'on',
 		usageSource: form.get('usageSource'),
 		usageApiMinutes: form.get('usageApiMinutes'),
+		approvals: form.get('approvals'),
+		awaySeconds: form.get('awaySeconds'),
+		approvalTimeoutMinutes: form.get('approvalTimeoutMinutes'),
 	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes']) {
+	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes']) {
 		if (editable[key] === null) delete editable[key];
 	}
 	return normalize({ ...config, ...editable }, config);

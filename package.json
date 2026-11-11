@@ -19,6 +19,9 @@
 		"service:uninstall": "sh scripts/service-macos.sh uninstall",
 		"service:status": "sh scripts/service-macos.sh status",
 		"service:logs": "sh scripts/service-macos.sh logs",
-		"statusline:print": "sh scripts/statusline-snippet.sh"
+		"statusline:print": "sh scripts/statusline-snippet.sh",
+		"hooks:install": "node scripts/hooks.js install",
+		"hooks:uninstall": "node scripts/hooks.js uninstall",
+		"hooks:status": "node scripts/hooks.js status"
 	}
 }

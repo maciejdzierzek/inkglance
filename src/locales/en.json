@@ -94,5 +94,17 @@
 	"where.claude-vscode": "VS Code",
 	"where.claude-desktop": "Claude app",
 	"where.sdk-cli": "SDK",
-	"where.sdk-ts": "SDK"
+	"where.sdk-ts": "SDK",
+	"approval.section": "Permission requests",
+	"approval.badge": "PERMISSION",
+	"approval.allow": "Allow",
+	"approval.deny": "Deny",
+	"approval.release": "On computer",
+	"approval.deniedMessage": "The user denied this from the inkai panel.",
+	"settings.approvals": "Answer permission requests on the reader",
+	"approvals.off": "never",
+	"approvals.away": "when I'm away",
+	"approvals.always": "always",
+	"settings.awaySeconds": "Away = no keyboard or mouse for",
+	"settings.approvalTimeoutMinutes": "Hand back to the computer after"
 }

@@ -14,6 +14,7 @@ import { t } from './i18n.js';
 import { createWatcher } from './watcher.js';
 import { createAlerts, playSound, inQuietHours } from './alerts.js';
 import { getUsage } from './usage.js';
+import { createApprovals } from './approvals.js';
 
 const COOKIE = 'inkai_t';
 const MAX_BODY = 16 * 1024;
@@ -28,11 +29,29 @@ const pairing = createPairing({
 		makeSystemNotify({ title: t(config.language, 'notify.title'), body: t(config.language, 'notify.body'), log })(code),
 });
 
+const alerts = createAlerts({ getConfig: () => config, label: (kind) => t(config.language, 'alert.' + kind), log });
+let knownApprovals = new Set();
+const approvals = createApprovals({
+	getConfig: () => config,
+	log,
+	onChange: () => {
+		watcher.bump();
+		// A new request is an alert like a session starting to wait.
+		const current = approvals.list();
+		for (const a of current) {
+			if (!knownApprovals.has(a.id)) alerts([{ kind: 'needsYou', session: { id: a.id, project: a.cwd.split('/').pop() || a.tool, name: a.tool } }]);
+		}
+		knownApprovals = new Set(current.map((a) => a.id));
+	},
+});
 const watcher = createWatcher({
 	getConfig: () => config,
 	list: (cfg) => listSessions(cfg),
-	onEvents: createAlerts({ getConfig: () => config, label: (kind) => t(config.language, 'alert.' + kind), log }),
+	onEvents: alerts,
+	extraWaiting: () => approvals.list().map((a) => a.id),
 });
+
+const isLoopback = (addr) => addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
 
 function sameToken(candidate) {
 	if (!candidate) return false;
@@ -50,13 +69,13 @@ function readCookie(req, name) {
 	return '';
 }
 
-function readBody(req) {
+function readBody(req, limit = MAX_BODY) {
 	return new Promise((resolve, reject) => {
 		let size = 0;
 		const chunks = [];
 		req.on('data', (chunk) => {
 			size += chunk.length;
-			if (size > MAX_BODY) {
+			if (size > limit) {
 				reject(new Error('body too large'));
 				req.destroy();
 			} else chunks.push(chunk);
@@ -81,6 +100,24 @@ async function handle(req, res) {
 	if (url.pathname === '/style.css') return send(res, 200, css, { 'Content-Type': 'text/css; charset=utf-8' });
 	if (url.pathname === '/health') return send(res, 200, 'ok', { 'Content-Type': 'text/plain' });
 
+	// Hook from Claude Code on this computer (src/hook.js): loopback only, token in a header.
+	if (url.pathname === '/hook/permission' && req.method === 'POST') {
+		if (!isLoopback(req.socket.remoteAddress) || !sameToken(req.headers['x-inkai-token'])) return send(res, 403, 'forbidden');
+		let input = {};
+		try {
+			input = JSON.parse(await readBody(req, 2 * 1024 * 1024));
+		} catch {
+			return send(res, 204, '');
+		}
+		let heldId = null;
+		res.on('close', () => {
+			if (heldId && !res.writableEnded) approvals.drop(heldId);
+		});
+		const outcome = await approvals.request(input, { onHold: (id) => (heldId = id) });
+		if (!outcome.decision) return send(res, 204, '');
+		return send(res, 200, JSON.stringify(outcome), { 'Content-Type': 'application/json' });
+	}
+
 	// Access: token from the link (then remembered in a cookie) or from the cookie.
 	// Without either, the device pairs with a short code shown on the computer.
 	const queryToken = url.searchParams.get('t');
@@ -99,7 +136,7 @@ async function handle(req, res) {
 		const data = await listSessions(config, ctx.now);
 		const groups = groupSessions(data.sessions, config, ctx.now);
 		const usage = config.showLimits ? await getUsage(config, ctx.now) : null;
-		return html(res, sessionsPage(ctx, data, groups, usage, { showStale: url.searchParams.get('stale') === '1' }), cookie);
+		return html(res, sessionsPage(ctx, data, groups, usage, approvals.list(), { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
 
 	// Tiny poll for readers: a version that moves when the panel would change,
@@ -128,6 +165,19 @@ async function handle(req, res) {
 			return send(res, 303, '', { Location: `/settings${qs ? '?' + qs : ''}` });
 		}
 		return html(res, settingsPage(ctx, { configFile: file }), cookie);
+	}
+
+	// Answer from the reader: allow, deny, or hand back to the computer.
+	if (url.pathname === '/approve' && req.method === 'POST') {
+		const form = new URLSearchParams(await readBody(req));
+		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+		const id = form.get('id');
+		const action = form.get('action');
+		if (action === 'allow') approvals.decide(id, 'allow');
+		else if (action === 'deny') approvals.decide(id, 'deny', t(config.language, 'approval.deniedMessage'));
+		else approvals.release(id);
+		const qs = viaCookie ? '' : `?t=${config.token}`;
+		return send(res, 303, '', { Location: `/${qs}` });
 	}
 
 	if (url.pathname === '/diag') {

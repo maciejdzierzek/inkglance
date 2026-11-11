@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
 
@@ -231,15 +231,43 @@ function limitsStrip(ctx, usage) {
 	return `<div class="limits">${row('fiveHour')}${row('sevenDay')}<div class="limit-age">${esc(t(lang, 'limits.age', { when: age }))}</div></div>`;
 }
 
-export function sessionsPage(ctx, data, groups, usage, { showStale }) {
+// Permission requests held for the reader: what is asked, by which session,
+// and three big buttons. Plain forms, so they work without JavaScript.
+function approvalsBlock(ctx, list, sessions) {
+	if (!list.length) return '';
+	const lang = ctx.config.language;
+	const href = makeHref(ctx);
+	const byId = new Map(sessions.map((s) => [s.id, s]));
+	const cards = list
+		.map((a) => {
+			const s = byId.get(a.sessionId);
+			const title = s?.details?.title || s?.name || a.cwd.split('/').pop() || '';
+			const project = s?.project || a.cwd.split('/').pop() || '';
+			const button = (action, cls) =>
+				`<button type="submit" name="action" value="${action}" class="button ${cls}">${esc(t(lang, 'approval.' + action))}</button>`;
+			return `<div class="card card-needsYou approval">
+<div class="card-head"><span class="badge badge-needsYou">${esc(t(lang, 'approval.badge'))}</span><span class="sub">${esc(project)} · ${esc(relativeTime(lang, a.createdAt, ctx.now))}</span></div>
+<div class="title">${esc(title)}</div>
+<div class="ask"><b>${esc(a.tool)}</b>${a.detail ? `<code>${esc(a.detail)}</code>` : ''}</div>
+<form method="post" action="${esc(href('/approve'))}" class="approval-actions">
+<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="id" value="${esc(a.id)}">
+${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 'btn-release')}
+</form>
+</div>`;
+		})
+		.join('\n');
+	return `<h2>${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
+}
+
+export function sessionsPage(ctx, data, groups, usage, approvalList, { showStale }) {
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
 	const idleCount = groups.idle.length + groups.stale.length;
-	const summary = `<span class="sum sum-needsYou${groups.needsYou.length ? ' sum-on' : ''}"><b>${groups.needsYou.length}</b> ${esc(t(lang, 'summary.needsYou'))}</span>
+	const summary = `<span class="sum sum-needsYou${groups.needsYou.length + approvalList.length ? ' sum-on' : ''}"><b>${groups.needsYou.length + approvalList.length}</b> ${esc(t(lang, 'summary.needsYou'))}</span>
 <span class="sum"><b>${groups.working.length}</b> ${esc(t(lang, 'summary.working'))}</span>
 <span class="sum"><b>${idleCount}</b> ${esc(t(lang, 'summary.idle'))}</span>`;
 
-	let body = limitsStrip(ctx, usage) + '<div id="main">';
+	let body = limitsStrip(ctx, usage) + '<div id="main">' + approvalsBlock(ctx, approvalList, data.sessions);
 	if (data.error) {
 		body += `<div class="error"><b>${esc(t(lang, 'error.title'))}</b><br>${esc(data.error)}</div>`;
 	} else if (!data.sessions.length) {
@@ -309,6 +337,9 @@ ${group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName)}
 <fieldset><legend>${esc(t(lang, 'settings.limits'))}</legend><div class="choices">${toggle('showLimits')}</div></fieldset>
 ${group('usageSource', USAGE_SOURCES.map((u) => [u, t(lang, 'usageSource.' + u)]), config.usageSource)}
 ${group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config.usageApiMinutes)}
+${group('approvals', APPROVAL_MODES.map((m) => [m, t(lang, 'approvals.' + m)]), config.approvals)}
+${group('awaySeconds', AWAY_PRESETS.map((x) => [x, x < 60 ? `${x} s` : `${x / 60} min`]), config.awaySeconds)}
+${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} min`]), config.approvalTimeoutMinutes)}
 ${group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours)}
 <noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>
 </form>

@@ -10,6 +10,9 @@ in them, so treat the access token like a password.
 - Limits from the claude.ai usage endpoint read Claude Code's stored login
   (macOS Keychain or `~/.claude/.credentials.json`) read-only. The token is sent
   only to api.anthropic.com, never logged, never refreshed or written back.
+- Permission requests: only loopback clients with the token can submit them
+  (the Claude Code hook); only paired devices can answer. The hook fails open to
+  Claude Code's normal dialog and never approves on its own.
 - Do not forward the port or put the panel on the public internet.
 
 Report vulnerabilities privately through GitHub Security Advisories on this
