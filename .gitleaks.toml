@@ -9,5 +9,7 @@ useDefault = true
 description = "Known-safe files"
 paths = [
   '''(^|/)node_modules/''',
+  '''(^|/)target/''',
+  '''tray/src-tauri/gen/''',
   '''\.env\.example$''',
 ]
