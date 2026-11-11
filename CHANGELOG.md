@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- "Where it runs" on cards: Terminal, VS Code, Claude app.
+- Docs: data sources per environment (terminal, VS Code, desktop app), the
+  Claude Code Usage extension, status line setup (`npm run statusline:print`),
+  e-reader setup guide (`docs/e-readers.md`).
+
 - Plan limits strip: 5-hour and weekly usage, reset time, forecast. Sources:
   Claude Code Usage extension file, status line snapshots, claude.ai usage
   endpoint (rare, Retry-After aware).

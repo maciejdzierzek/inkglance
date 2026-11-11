@@ -88,5 +88,11 @@
 	"usageSource.statusline": "status line",
 	"usageSource.api": "Anthropic",
 	"usageSource.off": "off",
-	"settings.usageApiMinutes": "Ask Anthropic at most every"
+	"settings.usageApiMinutes": "Ask Anthropic at most every",
+	"field.where": "where it runs",
+	"where.cli": "Terminal",
+	"where.claude-vscode": "VS Code",
+	"where.claude-desktop": "Claude app",
+	"where.sdk-cli": "SDK",
+	"where.sdk-ts": "SDK"
 }

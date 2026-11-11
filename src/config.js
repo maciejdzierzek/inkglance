@@ -17,7 +17,7 @@ export const COLUMNS = [1, 2, 3];
 export const ORIENTATIONS = ['auto', 'left', 'right'];
 // Fields a session card can show, in display order. The title, status and
 // project are always shown.
-export const CARD_FIELDS = ['waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'branch', 'times', 'path'];
+export const CARD_FIELDS = ['where', 'waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'branch', 'times', 'path'];
 // Presets offered as buttons on the settings screen (the file accepts any value in range).
 export const REFRESH_PRESETS = [30, 60, 120, 300, 600];
 export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
@@ -32,7 +32,7 @@ export const DEFAULTS = Object.freeze({
 	refreshSeconds: 60,
 	columns: 2,
 	orientation: 'auto',
-	cardFields: ['waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'times'],
+	cardFields: ['where', 'waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'times'],
 	hideIdleAfterHours: 24,
 	color: true,
 	fontScale: 1,

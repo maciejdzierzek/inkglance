@@ -18,6 +18,7 @@
 		"service:install": "sh scripts/service-macos.sh install",
 		"service:uninstall": "sh scripts/service-macos.sh uninstall",
 		"service:status": "sh scripts/service-macos.sh status",
-		"service:logs": "sh scripts/service-macos.sh logs"
+		"service:logs": "sh scripts/service-macos.sh logs",
+		"statusline:print": "sh scripts/statusline-snippet.sh"
 	}
 }

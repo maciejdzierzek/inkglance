@@ -172,6 +172,10 @@ function card(ctx, s) {
 	const title = d.title || s.name || s.project;
 	const sub = [s.project];
 	if (fields.has('branch') && d.branch) sub.push(d.branch);
+	if (fields.has('where') && d.entrypoint) {
+		const label = t(lang, 'where.' + d.entrypoint);
+		sub.push(label.startsWith('where.') ? d.entrypoint : label); // unknown entrypoints shown as-is
+	}
 
 	const rows = [];
 	if (fields.has('waitingFor') && s.waitingFor) rows.push(`<div class="waiting">${esc(s.waitingFor)}</div>`);

@@ -88,5 +88,11 @@
 	"usageSource.statusline": "pasek stanu",
 	"usageSource.api": "Anthropic",
 	"usageSource.off": "wyłączone",
-	"settings.usageApiMinutes": "Pytaj Anthropic nie częściej niż co"
+	"settings.usageApiMinutes": "Pytaj Anthropic nie częściej niż co",
+	"field.where": "gdzie działa",
+	"where.cli": "Terminal",
+	"where.claude-vscode": "VS Code",
+	"where.claude-desktop": "aplikacja Claude",
+	"where.sdk-cli": "SDK",
+	"where.sdk-ts": "SDK"
 }

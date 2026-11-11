@@ -25,6 +25,7 @@ function emptyState() {
 		model: '',
 		effort: '',
 		branch: '',
+		entrypoint: '',
 		contextTokens: 0,
 		outputById: new Map(),
 		outputTokens: 0,
@@ -67,6 +68,7 @@ function promptText(content) {
 
 export function applyLine(state, entry) {
 	if (!entry || typeof entry !== 'object' || entry.isSidechain) return;
+	if (entry.entrypoint) state.entrypoint = entry.entrypoint;
 	switch (entry.type) {
 		case 'custom-title':
 			if (entry.customTitle) state.customTitle = entry.customTitle;
@@ -170,6 +172,7 @@ export async function transcriptDetails(path) {
 			model: s.model,
 			effort: s.effort,
 			branch: s.branch,
+			entrypoint: s.entrypoint,
 			contextTokens: s.contextTokens,
 			outputTokens: s.outputTokens,
 			currentTool: s.currentTool,
