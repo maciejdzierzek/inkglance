@@ -1,3 +1,5 @@
+<img src="assets/icon.svg" width="96" alt="InkGlance icon">
+
 # InkGlance
 
 A calm, always-on panel for your Claude Code sessions, made for an e-ink reader

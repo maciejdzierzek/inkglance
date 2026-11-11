@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Icon: an eye whose pupil is an e-reader screen with a red dot. Color tile,
+  browser favicon, plugin icon, monochrome menu-bar template.
+
 - Settings in tabs (Display, Cards, Replies, Alerts, Limits); each tab saves
   only its own options.
 - Edit reply buttons on the reader: change, reorder, remove, add, defaults.

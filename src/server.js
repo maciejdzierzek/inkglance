@@ -24,6 +24,8 @@ const COOKIE = 'inkglance_t';
 const LEGACY_COOKIE = 'inkai_t'; // before the rename: keeps paired readers paired
 const MAX_BODY = 16 * 1024;
 const css = readFileSync(new URL('../public/style.css', import.meta.url));
+const favicon = readFileSync(new URL('../assets/favicon-64.png', import.meta.url));
+const iconSvg = readFileSync(new URL('../assets/icon.svg', import.meta.url));
 const file = configPath();
 let config = loadConfig(file);
 
@@ -106,6 +108,8 @@ async function handle(req, res) {
 
 	if (url.pathname === '/style.css') return send(res, 200, css, { 'Content-Type': 'text/css; charset=utf-8' });
 	if (url.pathname === '/health') return send(res, 200, 'ok', { 'Content-Type': 'text/plain' });
+	if (url.pathname === '/favicon.ico' || url.pathname === '/favicon.png') return send(res, 200, favicon, { 'Content-Type': 'image/png' });
+	if (url.pathname === '/icon.svg') return send(res, 200, iconSvg, { 'Content-Type': 'image/svg+xml' });
 
 	// Hooks from Claude Code on this computer (src/hook.sh): loopback only, token in a header.
 	if (url.pathname.startsWith('/hook/') && req.method === 'POST') {

@@ -152,6 +152,7 @@ function layout(ctx, { title, active, summary, body, live }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${live ? `<noscript><meta http-equiv="refresh" content="${config.refreshSeconds}"></noscript>` : ''}
 <title>${esc(title)}</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.png" type="image/png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="${config.color ? 'color' : 'mono'}">
@@ -516,7 +517,7 @@ export function pairingPage(lang, { error }) {
 		})
 		.join('');
 	return `<!DOCTYPE html><html lang="${lang}" style="font-size:18px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(t(lang, 'pair.title'))}</title><link rel="stylesheet" href="/style.css"></head>
+<title>${esc(t(lang, 'pair.title'))}</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"></head>
 <body class="mono pair-page">
 <h2>${esc(t(lang, 'pair.title'))}</h2>
 <p>${esc(t(lang, 'pair.body'))}</p>
