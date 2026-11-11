@@ -24,6 +24,7 @@ export function createWatcher({ getConfig, list, onEvents, extraWaiting = () => 
 	let signature = '';
 	let version = 0;
 	let waiting = [];
+	let counts = { needsYou: 0, working: 0, idle: 0 };
 
 	async function tick() {
 		const data = await list(getConfig());
@@ -31,6 +32,8 @@ export function createWatcher({ getConfig, list, onEvents, extraWaiting = () => 
 		const events = diff(prev, data.sessions);
 		prev = new Map(data.sessions.map((s) => [s.id, s.group]));
 		waiting = data.sessions.filter((s) => s.group === 'needsYou').map((s) => s.id);
+		counts = { needsYou: 0, working: 0, idle: 0 };
+		for (const s of data.sessions) counts[s.group] += 1;
 		const next = data.sessions
 			.map((s) => `${s.id}:${s.group}`)
 			.sort()
@@ -53,6 +56,9 @@ export function createWatcher({ getConfig, list, onEvents, extraWaiting = () => 
 		bump: () => {
 			version += 1;
 		},
-		state: () => ({ v: version, waiting: [...waiting, ...extraWaiting()] }),
+		state: () => {
+			const all = [...waiting, ...extraWaiting()];
+			return { v: version, waiting: all, counts: { ...counts, needsYou: all.length } };
+		},
 	};
 }

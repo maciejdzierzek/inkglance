@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Menu-bar app for macOS (Tauri 2, `npm run tray:install`): waiting count next
+  to the icon, status, reader address, panel / settings / limits windows,
+  restart, log, open at login, quit. Owns the server (bundled copy).
+- `/state` also reports session counts.
+
 - Icon: an eye whose pupil is an e-reader screen with a red dot. Color tile,
   browser favicon, plugin icon, monochrome menu-bar template.
 

@@ -23,6 +23,9 @@
 		"hooks:install": "node scripts/hooks.js install",
 		"hooks:uninstall": "node scripts/hooks.js uninstall",
 		"hooks:status": "node scripts/hooks.js status",
-		"config": "node scripts/config.js"
+		"config": "node scripts/config.js",
+		"tray:install": "sh scripts/tray-macos.sh install",
+		"tray:build": "sh scripts/tray-macos.sh build",
+		"tray:dev": "sh scripts/tray-macos.sh dev"
 	}
 }

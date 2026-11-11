@@ -1,0 +1,7 @@
+{
+	"$schema": "../gen/schemas/desktop-schema.json",
+	"identifier": "default",
+	"description": "Windows only show the local panel; no IPC commands are exposed.",
+	"windows": ["*"],
+	"permissions": ["core:default"]
+}

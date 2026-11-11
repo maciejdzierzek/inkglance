@@ -1,0 +1,14 @@
+{
+	"name": "inkglance-tray",
+	"private": true,
+	"version": "0.1.0",
+	"description": "InkGlance menu-bar / system-tray app: runs the panel server and shows its state.",
+	"scripts": {
+		"icons": "tauri icon ../assets/icon-1024.png",
+		"dev": "tauri dev",
+		"build": "tauri build --bundles app"
+	},
+	"devDependencies": {
+		"@tauri-apps/cli": "^2"
+	}
+}

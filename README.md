@@ -180,7 +180,20 @@ macOS may ask whether Node may accept incoming connections - allow it.
 **Set up the reader** so it stays on and connected:
 [docs/e-readers.md](docs/e-readers.md).
 
-## Run it in the background (macOS)
+## Menu-bar app (macOS)
+
+```sh
+npm run tray:install   # builds InkGlance.app (needs Rust), installs it to ~/Applications, opens it
+```
+
+An eye icon in the menu bar - with the number of sessions waiting for you next
+to it - and a menu: status, the address to open on the reader, *Open panel*,
+*Settings…*, *Limits…*, *Restart server*, *Show log*, *Open at login* and *Quit*.
+The app carries its own copy of the server and owns it: it starts the server,
+stops it on Quit, and replaces the background service below. Built with Tauri 2;
+Windows support is planned (see Roadmap).
+
+## Run it in the background without the app (macOS)
 
 ```sh
 npm run service:install    # starts at login, restarts if it stops
@@ -244,7 +257,10 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 2. Allow / deny permission requests, one-tap replies - **done**
 3. Usage charts - **done**
 4. Answer Claude's multiple-choice questions from the reader - **done**
-5. Jump to the session's window on the computer
+5. Menu-bar app for macOS - **done**; Windows next (notifications, idle
+   detection and hooks need Windows counterparts)
+6. Update checks and one-click updates
+7. Jump to the session's window on the computer
 
 ## Development
 

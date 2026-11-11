@@ -29,3 +29,8 @@ node_modules/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# --- Tray app build output ---
+tray/node_modules/
+tray/src-tauri/target/
+tray/src-tauri/gen/
