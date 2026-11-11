@@ -1,0 +1,20 @@
+#!/bin/sh
+# Pre-commit: secrets (gitleaks) + private data guard (workspace files, personal
+# config, home paths). Enable once per clone:  git config core.hooksPath .githooks
+# Emergency bypass (not recommended): git commit --no-verify
+
+set -e
+
+if ! command -v gitleaks > /dev/null 2>&1; then
+	echo "pre-commit: gitleaks is not installed - commit blocked."
+	echo "  Install: brew install gitleaks"
+	exit 1
+fi
+
+if ! gitleaks git --staged --redact --verbose --exit-code 1 --config .gitleaks.toml; then
+	echo ""
+	echo "BLOCKED: a secret was found in staged changes."
+	exit 1
+fi
+
+sh scripts/guard-private-data.sh --staged

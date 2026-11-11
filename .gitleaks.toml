@@ -1,0 +1,13 @@
+# gitleaks configuration: default ruleset (~150 patterns: cloud keys, GitHub,
+# Anthropic, OpenAI, ...). Runs in .githooks/pre-commit and scripts/check.sh.
+# Docs: https://github.com/gitleaks/gitleaks
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-safe files"
+paths = [
+  '''(^|/)node_modules/''',
+  '''\.env\.example$''',
+]

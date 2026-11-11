@@ -1,0 +1,31 @@
+# --- Private workspace: never published ---------------------------------------
+# This repository lives inside a private working folder. These patterns are a
+# safety net so internal notes and assistant configuration never reach GitHub.
+CLAUDE.md
+AGENTS.md
+.claude/
+PREP/
+TABLICA.md
+temp/
+tmp/
+
+# --- Personal configuration: never published ----------------------------------
+# The panel keeps its settings and access token in ~/.config/inkai/, outside the
+# repository. A copy dropped in here by mistake must not be committed either.
+config.json
+config.local.json
+
+# --- Secrets -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Tooling -----------------------------------------------------------------
+node_modules/
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
