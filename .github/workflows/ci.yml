@@ -67,6 +67,8 @@ jobs:
         run: |
           cargo fmt --check
           cargo clippy -- -D warnings
+      - name: Third-party notices (bundled with the app)
+        run: node scripts/third-party-notices.js
       - name: Build
         working-directory: tray
         run: |
@@ -76,6 +78,7 @@ jobs:
         with:
           name: inkglance-${{ matrix.os }}
           path: |
+            tray/src-tauri/THIRD-PARTY-NOTICES.txt
             tray/src-tauri/target/release/bundle/dmg/*.dmg
             tray/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: warn

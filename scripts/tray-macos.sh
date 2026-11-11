@@ -18,6 +18,7 @@ CONF_DIR="${CONF_DIR:-$HOME/.config/inkglance}"
 
 build() {
 	command -v cargo > /dev/null 2>&1 || { echo "Rust is needed to build the app: https://rustup.rs"; exit 1; }
+	node "$REPO/scripts/third-party-notices.js"   # license notices bundled with the app
 	(cd "$REPO/tray" && npm install --no-audit --no-fund > /dev/null && npx tauri build --bundles app)
 }
 

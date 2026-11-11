@@ -34,3 +34,4 @@ node_modules/
 tray/node_modules/
 tray/src-tauri/target/
 tray/src-tauri/gen/
+tray/src-tauri/THIRD-PARTY-NOTICES.txt

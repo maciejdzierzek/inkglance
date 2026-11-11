@@ -17,7 +17,8 @@
 			"../../src/": "server/src/",
 			"../../public/": "server/public/",
 			"../../assets/": "server/assets/",
-			"../../package.json": "server/package.json"
+			"../../package.json": "server/package.json",
+			"THIRD-PARTY-NOTICES.txt": "THIRD-PARTY-NOTICES.txt"
 		},
 		"macOS": { "minimumSystemVersion": "11.0" }
 	}

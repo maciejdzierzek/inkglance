@@ -413,8 +413,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT
   (MIT) - InkGlance reads its local quota file as the preferred, zero-request
   source of plan limits. No code is taken from it.
 - **[Tauri](https://tauri.app)** (MIT / Apache-2.0) - the menu-bar app, with
-  its plugins and Rust crates (MIT / Apache-2.0); release builds include
-  their license notices.
+  its plugins and Rust crates (MIT / Apache-2.0 and compatible); every app
+  build carries their notices in `THIRD-PARTY-NOTICES.txt`.
 - **[Contributor Covenant](https://www.contributor-covenant.org)** (CC BY 4.0) -
   our [Code of Conduct](CODE_OF_CONDUCT.md).
 - **Ideas, no code:** answering Claude from another device -

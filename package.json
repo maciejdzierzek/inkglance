@@ -29,7 +29,8 @@
 		"tray:dev": "sh scripts/tray-macos.sh dev",
 		"demo": "node scripts/demo.js",
 		"lint": "eslint . && knip",
-		"lint:sh": "shellcheck -s sh src/hook.sh scripts/*.sh .githooks/*"
+		"lint:sh": "shellcheck -s sh src/hook.sh scripts/*.sh .githooks/*",
+		"notices": "node scripts/third-party-notices.js"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

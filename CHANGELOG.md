@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The menu-bar app bundles THIRD-PARTY-NOTICES.txt with the licenses of all
+  476 Rust crates it is built from (`npm run notices`, run by every build).
+
 - State colors are chosen in Settings → Display (a row of color squares per
   state); text on colored bands turns black or white for contrast. New
   defaults measured on a Kaleido 3 screen: magenta (waiting), bright green
