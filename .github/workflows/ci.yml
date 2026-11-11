@@ -62,13 +62,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      # Before clippy too: the Tauri build script checks that bundled resources exist.
+      - name: Third-party notices (bundled with the app)
+        run: node scripts/third-party-notices.js
       - name: Rust format and lint
         working-directory: tray/src-tauri
         run: |
           cargo fmt --check
           cargo clippy -- -D warnings
-      - name: Third-party notices (bundled with the app)
-        run: node scripts/third-party-notices.js
       - name: Build
         working-directory: tray
         run: |
