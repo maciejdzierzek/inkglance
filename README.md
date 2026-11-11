@@ -1,9 +1,9 @@
-# inkai
+# InkGlance
 
 A calm, always-on panel for your Claude Code sessions, made for an e-ink reader
 on your desk.
 
-inkai runs a tiny web server on your computer. Any e-reader with a web browser
+InkGlance runs a tiny web server on your computer. Any e-reader with a web browser
 on the same Wi-Fi opens it and shows which sessions need you, which are working
 and which are idle - whether they run in a terminal, the VS Code extension or
 the Claude desktop app. Plan limits, alerts and per-session details included.
@@ -52,14 +52,14 @@ is plain HTML and works in any browser.
   way to list active Claude Code sessions. Verified with sessions from all three
   places.
 - **Details** come from each session's transcript in `~/.claude/projects/`. The
-  format is internal to Claude Code, so inkai reads it on a best-effort basis:
+  format is internal to Claude Code, so InkGlance reads it on a best-effort basis:
   if a future version changes it, some details disappear, the list stays.
-- **Plan limits** (claude.ai Pro / Max subscriptions) - inkai uses the cheapest
+- **Plan limits** (claude.ai Pro / Max subscriptions) - InkGlance uses the cheapest
   source available (setting *Limits source*, default *automatic*):
   1. **[Claude Code Usage](https://marketplace.visualstudio.com/items?itemName=growthjack.claude-code-usage)**
      ([source](https://github.com/ClaudeCodeUsage/ClaudeCodeUsage), MIT), a VS Code
      extension that tracks your quota and keeps its observations in a local
-     file. inkai reads that file: no network request of its own. Install it with
+     file. InkGlance reads that file: no network request of its own. Install it with
      `code --install-extension growthjack.claude-code-usage`; it needs no setup.
   2. **Status line** - Claude Code passes plan limits to status line commands.
      Run `npm run statusline:print` and add the printed `statusLine` entry to
@@ -76,7 +76,7 @@ is plain HTML and works in any browser.
 ```sh
 npm run hooks:install     # adds three hooks to ~/.claude/settings.json (with a backup)
 npm run hooks:status
-npm run hooks:uninstall   # removes only inkai's entries (with a backup)
+npm run hooks:uninstall   # removes only InkGlance's entries (with a backup)
 ```
 
 The hooks (`src/hook.sh`, a small shell script with curl) work in the terminal,
@@ -101,7 +101,7 @@ language's defaults.
 Permission requests cannot be answered in parallel: while the panel holds a
 request, Claude Code does not show
 its own permission dialog - it shows it only after the hook finishes. So by
-default (*when I'm away*) inkai holds a request only when your keyboard and
+default (*when I'm away*) InkGlance holds a request only when your keyboard and
 mouse have been idle for a minute, and hands it back the moment you touch them.
 At your desk you answer on the computer as usual; the reader just shows that a
 session is waiting. Other modes: *always* and *never*.
@@ -127,8 +127,8 @@ Safety:
 ## Quick start
 
 ```sh
-git clone https://github.com/maciejdzierzek/inkai.git
-cd inkai
+git clone https://github.com/maciejdzierzek/inkglance.git
+cd inkglance
 npm start
 ```
 
@@ -155,11 +155,11 @@ npm run service:logs       # pairing codes are printed here too
 npm run service:uninstall
 ```
 
-Run `service:install` again after updating inkai or Node.
+Run `service:install` again after updating InkGlance or Node.
 
 ## Configuration
 
-Settings live in `~/.config/inkai/config.json` (override with `INKAI_CONFIG`),
+Settings live in `~/.config/inkglance/config.json` (override with `INKGLANCE_CONFIG`),
 created on first start. Everything except the network, binary path and token
 can also be changed on the panel's **Settings** screen.
 

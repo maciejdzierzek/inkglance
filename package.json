@@ -1,5 +1,5 @@
 {
-	"name": "inkai",
+	"name": "inkglance",
 	"version": "0.1.0",
 	"description": "A Claude Code session panel for e-ink readers on your local network.",
 	"license": "MIT",
@@ -9,7 +9,7 @@
 		"node": ">=20"
 	},
 	"bin": {
-		"inkai": "src/server.js"
+		"inkglance": "src/server.js"
 	},
 	"scripts": {
 		"start": "node src/server.js",

@@ -1,6 +1,6 @@
 # Security
 
-inkai is meant for a trusted local network. It shows the names and folders of
+InkGlance is meant for a trusted local network. It shows the names and folders of
 your Claude Code sessions, and future versions will be able to approve actions
 in them, so treat the access token like a password.
 

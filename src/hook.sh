@@ -1,5 +1,5 @@
 #!/bin/sh
-# Claude Code hooks for the inkai panel. Installed by `npm run hooks:install`.
+# Claude Code hooks for the InkGlance panel. Installed by `npm run hooks:install`.
 #
 #   hook.sh permission  PermissionRequest: wait for Allow / Deny from the reader.
 #   hook.sh stop        Stop (asyncRewake, background): wait for a reply from the
@@ -14,10 +14,10 @@
 # and Claude Code behaves as if there were no hook. It decides nothing itself.
 
 EVENT="${1:-permission}"
-ENV_FILE="${INKAI_HOOK_ENV:-$HOME/.config/inkai/hook.env}"
+ENV_FILE="${INKGLANCE_HOOK_ENV:-$HOME/.config/inkglance/hook.env}"
 [ -r "$ENV_FILE" ] || exit 0
 . "$ENV_FILE"
-[ -n "$INKAI_PORT" ] && [ -n "$INKAI_TOKEN" ] || exit 0
+[ -n "$INKGLANCE_PORT" ] && [ -n "$INKGLANCE_TOKEN" ] || exit 0
 
 case "$EVENT" in
 	permission) MAX=900 ;;
@@ -27,8 +27,8 @@ case "$EVENT" in
 esac
 
 OUT=$(curl -s -f -m "$MAX" -X POST \
-	-H "X-Inkai-Token: $INKAI_TOKEN" -H "Content-Type: application/json" \
-	--data-binary @- "http://127.0.0.1:$INKAI_PORT/hook/$EVENT") || exit 0
+	-H "X-InkGlance-Token: $INKGLANCE_TOKEN" -H "Content-Type: application/json" \
+	--data-binary @- "http://127.0.0.1:$INKGLANCE_PORT/hook/$EVENT") || exit 0
 [ -n "$OUT" ] || exit 0
 
 case "$EVENT" in

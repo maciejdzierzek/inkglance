@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Installs the inkai hooks (PermissionRequest, Stop, UserPromptSubmit) into Claude Code's user settings
+// Installs the InkGlance hooks (PermissionRequest, Stop, UserPromptSubmit) into Claude Code's user settings
 // (~/.claude/settings.json), next to any hooks you already have.
 //
 //   node scripts/hooks.js install     # backup + add (or update) the hook
-//   node scripts/hooks.js uninstall   # backup + remove only inkai's entries
+//   node scripts/hooks.js uninstall   # backup + remove only InkGlance's entries
 //   node scripts/hooks.js status
 //
-// inkai's entries are recognised by the "# [inkai]" marker in the command.
+// InkGlance's entries are recognised by the "# [inkglance]" marker in the command.
 
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -14,7 +14,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SETTINGS = process.env.CLAUDE_SETTINGS || join(homedir(), '.claude', 'settings.json');
-const MARKER = '# [inkai]';
+const MARKER = '# [inkglance]';
+const LEGACY_MARKERS = ['# [inkai]']; // entries from before the rename, removed on install/uninstall
 const HOOK = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'hook.sh');
 // Event -> hook settings. Timeouts are longer than the longest wait the panel
 // allows (approvalTimeoutMinutes <= 14, replyWindowHours <= 24).
@@ -25,12 +26,12 @@ const HOOKS = {
 };
 
 const load = () => (existsSync(SETTINGS) ? JSON.parse(readFileSync(SETTINGS, 'utf8')) : {});
-const isOurs = (h) => typeof h?.command === 'string' && h.command.includes(MARKER);
+const isOurs = (h) => typeof h?.command === 'string' && [MARKER, ...LEGACY_MARKERS].some((m) => h.command.includes(m));
 
 function backup() {
 	if (!existsSync(SETTINGS)) return null;
 	const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-	const copy = `${SETTINGS}.bak-inkai-${stamp}`;
+	const copy = `${SETTINGS}.bak-inkglance-${stamp}`;
 	copyFileSync(SETTINGS, copy);
 	return copy;
 }
@@ -67,7 +68,7 @@ if (cmd === 'install') {
 		settings.hooks[event].push(event === 'PermissionRequest' ? { matcher: '*', hooks: [entry] } : { hooks: [entry] });
 	}
 	save(settings);
-	console.log(`Installed inkai hooks (${Object.keys(HOOKS).join(', ')}) in ${SETTINGS}`);
+	console.log(`Installed InkGlance hooks (${Object.keys(HOOKS).join(', ')}) in ${SETTINGS}`);
 	if (copy) console.log(`Backup: ${copy}`);
 } else if (cmd === 'uninstall') {
 	if (!installed) {
@@ -75,7 +76,7 @@ if (cmd === 'install') {
 	} else {
 		const copy = backup();
 		save(strip(settings));
-		console.log(`Removed inkai hooks from ${SETTINGS}`);
+		console.log(`Removed InkGlance hooks from ${SETTINGS}`);
 		if (copy) console.log(`Backup: ${copy}`);
 	}
 } else if (cmd === 'status') {

@@ -48,7 +48,7 @@
   sessions, data from `claude agents --json`.
 - Settings screen: language (English, Polish), refresh interval, card style,
   text size, color, path, diagnostics.
-- Access token with cookie, config in `~/.config/inkai/`.
+- Access token with cookie, config in `~/.config/inkglance/`.
 - Pairing with a 4-digit code shown in a macOS notification - no token typing
   on e-ink keyboards. Port 80 supported for a short address.
 - Log line when a browser tries `https://` on the plain-HTTP port.

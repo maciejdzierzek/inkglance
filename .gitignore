@@ -10,7 +10,7 @@ temp/
 tmp/
 
 # --- Personal configuration: never published ----------------------------------
-# The panel keeps its settings and access token in ~/.config/inkai/, outside the
+# The panel keeps its settings and access token in ~/.config/inkglance/, outside the
 # repository. A copy dropped in here by mistake must not be committed either.
 config.json
 config.local.json

@@ -51,5 +51,5 @@ export function createReplies({ getConfig, log, onChange }) {
 // The text Claude receives (as a system reminder from the hook). Explicit about
 // where it comes from, so it is read as the user's next message.
 export function wakeText(reply) {
-	return `The user replied from their inkai e-ink panel (sent by the user, not a tool): "${reply}". Treat this as the user's next message and continue.`;
+	return `The user replied from their InkGlance e-ink panel (sent by the user, not a tool): "${reply}". Treat this as the user's next message and continue.`;
 }

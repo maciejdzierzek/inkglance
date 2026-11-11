@@ -4,7 +4,7 @@
 // latest snapshot per session for the panel and print a short status line.
 //
 // Install in ~/.claude/settings.json:
-//   "statusLine": { "type": "command", "command": "node /path/to/inkai/src/statusline.js" }
+//   "statusLine": { "type": "command", "command": "node /path/to/inkglance/src/statusline.js" }
 //
 // Must be fast and never fail loudly: Claude Code calls it on every update.
 

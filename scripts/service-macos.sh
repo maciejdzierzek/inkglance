@@ -12,9 +12,10 @@
 
 set -e
 
-LABEL="io.github.inkai.panel"
+LABEL="io.github.inkglance.panel"
+LEGACY_LABEL="io.github.inkai.panel" # before the rename
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-LOG="$HOME/Library/Logs/inkai.log"
+LOG="$HOME/Library/Logs/inkglance.log"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 DOMAIN="gui/$(id -u)"
 
@@ -60,6 +61,9 @@ case "${1:-}" in
 </dict>
 </plist>
 PLIST
+		# Remove the service installed under the old name, if any.
+		launchctl bootout "$DOMAIN/$LEGACY_LABEL" 2> /dev/null || true
+		rm -f "$HOME/Library/LaunchAgents/$LEGACY_LABEL.plist"
 		launchctl bootout "$DOMAIN/$LABEL" 2> /dev/null || true
 		# bootout returns before the old instance is gone; wait for it.
 		i=0

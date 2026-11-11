@@ -3,7 +3,7 @@
 // personal preferences, which never belong in version control.
 
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, chmodSync, existsSync, cpSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { MAC_SOUNDS, QUIET_PRESETS } from './alerts.js';
@@ -61,7 +61,7 @@ export const DEFAULTS = Object.freeze({
 });
 
 export function configPath() {
-	return process.env.INKAI_CONFIG || join(homedir(), '.config', 'inkai', 'config.json');
+	return process.env.INKGLANCE_CONFIG || join(homedir(), '.config', 'inkglance', 'config.json');
 }
 
 const clampInt = (value, min, max, fallback) => {
@@ -122,7 +122,15 @@ export function newToken() {
 	return randomBytes(18).toString('base64url');
 }
 
+// The project was called "inkai" before; copy its config folder once.
+function migrateLegacy(path) {
+	const legacyDir = join(homedir(), '.config', 'inkai');
+	if (process.env.INKGLANCE_CONFIG || existsSync(path) || !existsSync(join(legacyDir, 'config.json'))) return;
+	cpSync(legacyDir, dirname(path), { recursive: true });
+}
+
 export function loadConfig(path = configPath()) {
+	migrateLegacy(path);
 	let raw = {};
 	try {
 		raw = JSON.parse(readFileSync(path, 'utf8'));

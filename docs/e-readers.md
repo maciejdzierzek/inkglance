@@ -1,6 +1,6 @@
 # Setting up an e-reader as an always-on panel
 
-Any e-reader with a web browser and Wi-Fi can show inkai. E-readers are built to
+Any e-reader with a web browser and Wi-Fi can show InkGlance. E-readers are built to
 save battery, though: they lock the screen, power off and drop Wi-Fi when nobody
 touches them. A panel on your desk needs the opposite, so a few settings matter.
 
@@ -15,8 +15,8 @@ touches them. A panel on your desk needs the opposite, so a few settings matter.
 4. **Fullscreen**: tap the corner-brackets button in the top bar. The panel
    refreshes in place, so fullscreen survives updates.
 5. **On its side**: if the browser has its own rotate option, use it and leave
-   inkai's orientation on *automatic*. If it does not, choose *rotate left* or
-   *rotate right* in inkai's settings and the page is drawn sideways.
+   InkGlance's orientation on *automatic*. If it does not, choose *rotate left* or
+   *rotate right* in InkGlance's settings and the page is drawn sideways.
 
 When the reader loses Wi-Fi, the footer shows *no connection to the computer*.
 The panel catches up by itself once the connection is back, or with the refresh
@@ -40,9 +40,9 @@ What we measured on this device:
 - The browser is a Chromium 122 engine. Viewport 572 x 663 CSS px
   (dpr 1.875) with the browser bars, more in fullscreen. Cookies, JavaScript
   and fullscreen work.
-- It typed `https://` first for a bare address. Running inkai on port 80
+- It typed `https://` first for a bare address. Running InkGlance on port 80
   (`"port": 80`) gives a short address and a quick fall-back to plain HTTP.
-- There is no speaker; sound goes over Bluetooth only. inkai therefore plays
+- There is no speaker; sound goes over Bluetooth only. InkGlance therefore plays
   alerts on the computer and flashes the reader's screen.
 - Even with the screen lock off, the reader still powers off after at most 60
   minutes without a touch, and Wi-Fi drops when it sleeps. Whether page refreshes

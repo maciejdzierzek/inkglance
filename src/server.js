@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// inkai - a Claude Code session panel for e-ink readers on the local network.
+// InkGlance - a Claude Code session panel for e-ink readers on the local network.
 // Zero dependencies: Node's http server, server-rendered HTML, plain CSS.
 
 import { createServer } from 'node:http';
@@ -18,7 +18,8 @@ import { getUsage } from './usage.js';
 import { createApprovals } from './approvals.js';
 import { createReplies, wakeText } from './replies.js';
 
-const COOKIE = 'inkai_t';
+const COOKIE = 'inkglance_t';
+const LEGACY_COOKIE = 'inkai_t'; // before the rename: keeps paired readers paired
 const MAX_BODY = 16 * 1024;
 const css = readFileSync(new URL('../public/style.css', import.meta.url));
 const file = configPath();
@@ -106,7 +107,7 @@ async function handle(req, res) {
 
 	// Hooks from Claude Code on this computer (src/hook.sh): loopback only, token in a header.
 	if (url.pathname.startsWith('/hook/') && req.method === 'POST') {
-		if (!isLoopback(req.socket.remoteAddress) || !sameToken(req.headers['x-inkai-token'])) return send(res, 403, 'forbidden');
+		if (!isLoopback(req.socket.remoteAddress) || !sameToken(req.headers['x-inkglance-token'])) return send(res, 403, 'forbidden');
 		let input = {};
 		try {
 			input = JSON.parse(await readBody(req, 2 * 1024 * 1024));
@@ -137,7 +138,7 @@ async function handle(req, res) {
 		const decision =
 			outcome.decision === 'allow'
 				? { behavior: 'allow' }
-				: { behavior: 'deny', message: outcome.message || 'Denied from the inkai panel.' };
+				: { behavior: 'deny', message: outcome.message || 'Denied from the InkGlance panel.' };
 		return send(res, 200, JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision } }), {
 			'Content-Type': 'application/json',
 		});
@@ -147,7 +148,7 @@ async function handle(req, res) {
 	// Without either, the device pairs with a short code shown on the computer.
 	const queryToken = url.searchParams.get('t');
 	const viaQuery = sameToken(queryToken);
-	const viaCookie = sameToken(readCookie(req, COOKIE));
+	const viaCookie = sameToken(readCookie(req, COOKIE)) || sameToken(readCookie(req, LEGACY_COOKIE));
 	if (!viaQuery && !viaCookie) return handlePairing(req, res, url);
 	const cookie = viaQuery
 		? { 'Set-Cookie': `${COOKIE}=${encodeURIComponent(config.token)}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax` }
@@ -279,7 +280,7 @@ server.on('error', (err) => {
 // reliably without extra tools). Rewritten on every start, so it follows the config.
 function writeHookEnv() {
 	const envFile = join(dirname(file), 'hook.env');
-	writeFileSync(envFile, `INKAI_PORT=${config.port}\nINKAI_TOKEN=${config.token}\n`, { mode: 0o600 });
+	writeFileSync(envFile, `INKGLANCE_PORT=${config.port}\nINKGLANCE_TOKEN=${config.token}\n`, { mode: 0o600 });
 }
 
 server.listen(config.port, config.host, () => {
@@ -287,7 +288,7 @@ server.listen(config.port, config.host, () => {
 	watcher.start();
 	const host = hostname().replace(/\.local$/, '');
 	const port = config.port === 80 ? '' : `:${config.port}`;
-	console.log(`inkai is running. Open on your e-reader (same Wi-Fi) and type the code shown here:`);
+	console.log(`InkGlance is running. Open on your e-reader (same Wi-Fi) and type the code shown here:`);
 	for (const ip of lanAddresses()) console.log(`  http://${ip}${port}`);
 	console.log(`  http://${host}.local${port}`);
 	console.log(`Config: ${file}`);
