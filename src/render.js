@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
 
@@ -189,12 +189,30 @@ function card(ctx, s) {
 	if (fields.has('times')) meta.push(relativeTime(lang, s.lastActivity, ctx.now));
 	if (meta.length) rows.push(`<div class="meta">${esc(meta.join(' · '))}</div>`);
 	if (fields.has('path') && s.cwd) rows.push(`<div class="path">${esc(tildePath(s.cwd))}</div>`);
+	if (ctx.canReply?.(s.id)) rows.push(replyForm(ctx, s));
 
 	return `<div class="card card-${s.group}">
 <div class="card-head"><span class="badge badge-${s.group}">${esc(t(lang, 'status.' + s.group))}</span><span class="sub">${esc(sub.join(' · '))}</span></div>
 <div class="title">${esc(title)}</div>
 ${rows.join('\n')}
 </div>`;
+}
+
+export function templatesFor(config) {
+	return config.templates.length ? config.templates : t(config.language, 'templates.default').split('|');
+}
+
+// One-tap replies for a session whose turn is over; the session stays usable on
+// the computer at the same time (see replies.js).
+function replyForm(ctx, s) {
+	const href = makeHref(ctx);
+	const buttons = templatesFor(ctx.config)
+		.map((text) => `<button type="submit" name="text" value="${esc(text)}" class="chip">${esc(text)}</button>`)
+		.join('');
+	return `<form method="post" action="${esc(href('/reply'))}" class="reply">
+<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="session" value="${esc(s.id)}">
+<div class="reply-label">${esc(t(ctx.config.language, 'reply.label'))}</div>${buttons}
+</form>`;
 }
 
 function section(ctx, key, list, heading) {
@@ -259,7 +277,8 @@ ${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 
 	return `<h2>${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
 }
 
-export function sessionsPage(ctx, data, groups, usage, approvalList, { showStale }) {
+export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList, canReply }, { showStale }) {
+	ctx.canReply = canReply;
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
 	const idleCount = groups.idle.length + groups.stale.length;
@@ -340,6 +359,8 @@ ${group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config
 ${group('approvals', APPROVAL_MODES.map((m) => [m, t(lang, 'approvals.' + m)]), config.approvals)}
 ${group('awaySeconds', AWAY_PRESETS.map((x) => [x, x < 60 ? `${x} s` : `${x / 60} min`]), config.awaySeconds)}
 ${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} min`]), config.approvalTimeoutMinutes)}
+<fieldset><legend>${esc(t(lang, 'settings.repliesTitle'))}</legend><div class="choices">${toggle('replies')}</div></fieldset>
+${group('replyWindowHours', REPLY_WINDOW_PRESETS.map((h) => [h, `${h} h`]), config.replyWindowHours)}
 ${group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours)}
 <noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>
 </form>

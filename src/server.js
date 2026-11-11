@@ -3,7 +3,8 @@
 // Zero dependencies: Node's http server, server-rendered HTML, plain CSS.
 
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { hostname, networkInterfaces } from 'node:os';
 import { timingSafeEqual } from 'node:crypto';
 import { loadConfig, saveConfig, applySettingsForm, configPath } from './config.js';
@@ -15,6 +16,7 @@ import { createWatcher } from './watcher.js';
 import { createAlerts, playSound, inQuietHours } from './alerts.js';
 import { getUsage } from './usage.js';
 import { createApprovals } from './approvals.js';
+import { createReplies, wakeText } from './replies.js';
 
 const COOKIE = 'inkai_t';
 const MAX_BODY = 16 * 1024;
@@ -50,6 +52,8 @@ const watcher = createWatcher({
 	onEvents: alerts,
 	extraWaiting: () => approvals.list().map((a) => a.id),
 });
+
+const replies = createReplies({ getConfig: () => config, log, onChange: () => watcher.bump() });
 
 const isLoopback = (addr) => addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
 
@@ -100,8 +104,8 @@ async function handle(req, res) {
 	if (url.pathname === '/style.css') return send(res, 200, css, { 'Content-Type': 'text/css; charset=utf-8' });
 	if (url.pathname === '/health') return send(res, 200, 'ok', { 'Content-Type': 'text/plain' });
 
-	// Hook from Claude Code on this computer (src/hook.js): loopback only, token in a header.
-	if (url.pathname === '/hook/permission' && req.method === 'POST') {
+	// Hooks from Claude Code on this computer (src/hook.sh): loopback only, token in a header.
+	if (url.pathname.startsWith('/hook/') && req.method === 'POST') {
 		if (!isLoopback(req.socket.remoteAddress) || !sameToken(req.headers['x-inkai-token'])) return send(res, 403, 'forbidden');
 		let input = {};
 		try {
@@ -109,13 +113,34 @@ async function handle(req, res) {
 		} catch {
 			return send(res, 204, '');
 		}
+		if (url.pathname === '/hook/prompt') {
+			replies.userTyped(input.session_id || '');
+			return send(res, 204, '');
+		}
+		if (url.pathname === '/hook/stop') {
+			const sid = input.session_id || '';
+			res.on('close', () => {
+				if (!res.writableEnded) replies.drop(sid);
+			});
+			const outcome = await replies.open(sid);
+			if (!outcome.reply) return send(res, 204, '');
+			return send(res, 200, wakeText(outcome.reply), { 'Content-Type': 'text/plain; charset=utf-8' });
+		}
+		if (url.pathname !== '/hook/permission') return send(res, 404, '');
 		let heldId = null;
 		res.on('close', () => {
 			if (heldId && !res.writableEnded) approvals.drop(heldId);
 		});
 		const outcome = await approvals.request(input, { onHold: (id) => (heldId = id) });
 		if (!outcome.decision) return send(res, 204, '');
-		return send(res, 200, JSON.stringify(outcome), { 'Content-Type': 'application/json' });
+		// The hook prints this as-is: Claude Code's PermissionRequest decision format.
+		const decision =
+			outcome.decision === 'allow'
+				? { behavior: 'allow' }
+				: { behavior: 'deny', message: outcome.message || 'Denied from the inkai panel.' };
+		return send(res, 200, JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision } }), {
+			'Content-Type': 'application/json',
+		});
 	}
 
 	// Access: token from the link (then remembered in a cookie) or from the cookie.
@@ -136,7 +161,8 @@ async function handle(req, res) {
 		const data = await listSessions(config, ctx.now);
 		const groups = groupSessions(data.sessions, config, ctx.now);
 		const usage = config.showLimits ? await getUsage(config, ctx.now) : null;
-		return html(res, sessionsPage(ctx, data, groups, usage, approvals.list(), { showStale: url.searchParams.get('stale') === '1' }), cookie);
+		const extras = { usage, approvals: approvals.list(), canReply: (id) => replies.isOpen(id) };
+		return html(res, sessionsPage(ctx, data, groups, extras, { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
 
 	// Tiny poll for readers: a version that moves when the panel would change,
@@ -176,6 +202,16 @@ async function handle(req, res) {
 		if (action === 'allow') approvals.decide(id, 'allow');
 		else if (action === 'deny') approvals.decide(id, 'deny', t(config.language, 'approval.deniedMessage'));
 		else approvals.release(id);
+		const qs = viaCookie ? '' : `?t=${config.token}`;
+		return send(res, 303, '', { Location: `/${qs}` });
+	}
+
+	// Reply from the reader to a session that finished its turn.
+	if (url.pathname === '/reply' && req.method === 'POST') {
+		const form = new URLSearchParams(await readBody(req));
+		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+		const text = (form.get('text') || '').trim();
+		if (text) replies.send(form.get('session') || '', text);
 		const qs = viaCookie ? '' : `?t=${config.token}`;
 		return send(res, 303, '', { Location: `/${qs}` });
 	}
@@ -239,7 +275,15 @@ server.on('error', (err) => {
 	throw err;
 });
 
+// Port and token for src/hook.sh (a shell script cannot read the JSON config
+// reliably without extra tools). Rewritten on every start, so it follows the config.
+function writeHookEnv() {
+	const envFile = join(dirname(file), 'hook.env');
+	writeFileSync(envFile, `INKAI_PORT=${config.port}\nINKAI_TOKEN=${config.token}\n`, { mode: 0o600 });
+}
+
 server.listen(config.port, config.host, () => {
+	writeHookEnv();
 	watcher.start();
 	const host = hostname().replace(/\.local$/, '');
 	const port = config.port === 80 ? '' : `:${config.port}`;

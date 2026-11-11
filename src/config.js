@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { MAC_SOUNDS, QUIET_PRESETS } from './alerts.js';
 import { USAGE_SOURCES } from './usage.js';
 import { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS } from './approvals.js';
+import { REPLY_WINDOW_PRESETS } from './replies.js';
 
 export const LANGUAGES = ['en', 'pl'];
 export const FONT_SCALES = [0.875, 1, 1.125, 1.25, 1.5];
@@ -25,7 +26,7 @@ export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
 export const ALERT_KINDS = ['needsYou', 'finished'];
 export { MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES };
 export const USAGE_API_PRESETS = [15, 30, 60];
-export { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS };
+export { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS };
 
 export const DEFAULTS = Object.freeze({
 	host: '0.0.0.0',
@@ -51,6 +52,10 @@ export const DEFAULTS = Object.freeze({
 	approvals: 'away',
 	awaySeconds: 60,
 	approvalTimeoutMinutes: 5,
+	replies: true,
+	replyWindowHours: 4,
+	// Reply buttons; empty = the language's defaults. Edit in the file.
+	templates: [],
 	claudeBin: 'claude',
 	token: '',
 });
@@ -103,6 +108,11 @@ export function normalize(input = {}, base = DEFAULTS) {
 		approvals: pick(APPROVAL_MODES, input.approvals, base.approvals),
 		awaySeconds: clampInt(input.awaySeconds, 10, 3600, base.awaySeconds),
 		approvalTimeoutMinutes: clampInt(input.approvalTimeoutMinutes, 1, 14, base.approvalTimeoutMinutes),
+		replies: toBool(input.replies, base.replies),
+		replyWindowHours: clampInt(input.replyWindowHours, 1, 24, base.replyWindowHours),
+		templates: Array.isArray(input.templates)
+			? input.templates.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim().slice(0, 200)).slice(0, 12)
+			: base.templates,
 		claudeBin: typeof input.claudeBin === 'string' && input.claudeBin ? input.claudeBin : base.claudeBin,
 		token: typeof input.token === 'string' && /^[A-Za-z0-9_-]{16,}$/.test(input.token) ? input.token : base.token,
 	};
@@ -159,8 +169,10 @@ export function applySettingsForm(config, form) {
 		approvals: form.get('approvals'),
 		awaySeconds: form.get('awaySeconds'),
 		approvalTimeoutMinutes: form.get('approvalTimeoutMinutes'),
+		replies: form.get('replies') === 'on',
+		replyWindowHours: form.get('replyWindowHours'),
 	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes']) {
+	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours', 'usageSource', 'usageApiMinutes', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes', 'replyWindowHours']) {
 		if (editable[key] === null) delete editable[key];
 	}
 	return normalize({ ...config, ...editable }, config);

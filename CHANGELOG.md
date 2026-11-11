@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- One-tap replies from the reader to sessions that finished their turn, in
+  parallel with the computer: Stop hook with `asyncRewake` + UserPromptSubmit
+  hook. Templates configurable.
+- Hooks are now a curl shell script (`src/hook.sh`, ~5 MB per waiting session);
+  `src/hook.js` stays as a compatibility shim. Run `npm run hooks:install` again.
+
 - Answer permission requests from the reader (Allow / Deny / On computer) via
   a Claude Code PermissionRequest hook: `npm run hooks:install`. Holds only
   when you are away (idle keyboard and mouse) by default, hands back when you

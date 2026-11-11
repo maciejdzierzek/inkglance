@@ -106,5 +106,10 @@
 	"approvals.away": "gdy mnie nie ma",
 	"approvals.always": "zawsze",
 	"settings.awaySeconds": "„Nie ma mnie” = bez klawiatury i myszy przez",
-	"settings.approvalTimeoutMinutes": "Oddaj komputerowi po"
+	"settings.approvalTimeoutMinutes": "Oddaj komputerowi po",
+	"reply.label": "Odpowiedz:",
+	"templates.default": "Tak, kontynuuj|Kontynuuj|Zrób commit|Wróć do zadania",
+	"settings.repliesTitle": "Odpowiedzi z czytnika",
+	"settings.replies": "przyciski odpowiedzi przy skończonych sesjach",
+	"settings.replyWindowHours": "Czekaj na odpowiedź z czytnika do"
 }

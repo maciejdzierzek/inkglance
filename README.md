@@ -12,8 +12,8 @@ No app to install on the reader, no cable.
 Built and tested on a PocketBook Verse Pro Color (Kaleido 3 color e-ink), but it
 is plain HTML and works in any browser.
 
-> **Status: early (0.1).** Watching sessions, limits, alerts and answering
-> permission requests work. Replies and templates are next, see [Roadmap](#roadmap).
+> **Status: early (0.1).** Watching sessions, limits, alerts, permission
+> requests and one-tap replies work. See [Roadmap](#roadmap).
 
 ## What it shows
 
@@ -30,6 +30,8 @@ is plain HTML and works in any browser.
   hours.
 - **Permission requests on the reader**: *Allow*, *Deny* or *On computer*, with
   the command or file being asked about (see below).
+- **One-tap replies** on sessions that finished their turn ("Yes, continue",
+  "Commit", your own) - in parallel with the computer, never instead of it.
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
   English and Polish. Every setting is a big button - nothing to type on e-ink.
 
@@ -69,16 +71,35 @@ is plain HTML and works in any browser.
      undocumented and strictly rate limited (we have seen a one-hour block). The
      token goes only to api.anthropic.com and is never stored or refreshed.
 
-## Answering permission requests from the reader
+## Answering from the reader
 
 ```sh
-npm run hooks:install     # adds a PermissionRequest hook to ~/.claude/settings.json (with a backup)
+npm run hooks:install     # adds three hooks to ~/.claude/settings.json (with a backup)
 npm run hooks:status
-npm run hooks:uninstall   # removes only inkai's entry (with a backup)
+npm run hooks:uninstall   # removes only inkai's entries (with a backup)
 ```
 
-The hook works in the terminal, the VS Code extension and the desktop app.
-One thing to know: while the panel holds a request, Claude Code does not show
+The hooks (`src/hook.sh`, a small shell script with curl) work in the terminal,
+the VS Code extension and the desktop app, next to any hooks you already have.
+
+### Replies: in parallel with the computer
+
+When a session finishes its turn, a **Stop** hook with Claude Code's
+`asyncRewake` option starts in the background. The session stays idle and fully
+usable on the computer - answer there whenever you like, minutes or hours later.
+Meanwhile the reader shows reply buttons on that session. Tap one and the hook
+wakes Claude with your reply. Type on the computer first and a
+**UserPromptSubmit** hook tells the panel, which closes the reader's reply slot.
+Unused slots expire after 4 hours (setting *Keep replies open for*). Each
+waiting session costs one idle curl process (about 5 MB).
+
+Reply buttons come from `templates` in the config file; empty means the
+language's defaults.
+
+### Permission requests: when you are away
+
+Permission requests cannot be answered in parallel: while the panel holds a
+request, Claude Code does not show
 its own permission dialog - it shows it only after the hook finishes. So by
 default (*when I'm away*) inkai holds a request only when your keyboard and
 mouse have been idle for a minute, and hands it back the moment you touch them.
@@ -164,6 +185,9 @@ can also be changed on the panel's **Settings** screen.
 | `approvals` | `away` | Answer permission requests on the reader: `off`, `away`, `always` |
 | `awaySeconds` | `60` | Idle keyboard and mouse time that counts as away |
 | `approvalTimeoutMinutes` | `5` | Hand a request back to the computer after this |
+| `replies` | `true` | Reply buttons on finished sessions |
+| `replyWindowHours` | `4` | How long a finished session accepts a reply from the reader (1-24) |
+| `templates` | `[]` | Your reply buttons, e.g. `["Yes, continue", "Commit"]`; empty = defaults |
 | `host`, `port` | `0.0.0.0`, `4747` | Where the server listens (file only) |
 | `claudeBin` | `claude` | Path to the Claude Code binary (file only) |
 | `token` | generated | Access token (file only) |
@@ -183,9 +207,9 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 1. Session list, settings, alerts, plan limits - **done**
-2. Allow / deny permission requests from the reader - **done**
+2. Allow / deny permission requests, one-tap replies - **done**
 3. Usage charts from the limits history
-4. Answer questions and send reply templates when a session finishes
+4. Answer `AskUserQuestion` choices from the reader
 5. Jump to the session's window on the computer
 
 ## Development

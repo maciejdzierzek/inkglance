@@ -1,6 +1,6 @@
 // Permission requests answered from the reader.
 //
-// Claude Code runs our PermissionRequest hook (src/hook.js) before it shows its
+// Claude Code runs our PermissionRequest hook (src/hook.sh) before it shows its
 // own permission dialog, and shows the dialog only after the hook exits. So
 // holding a request here hides the dialog on the computer. Rules that keep the
 // computer the default place to answer:

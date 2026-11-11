@@ -106,3 +106,8 @@ html.flash { filter: invert(1); background: #000; }
 .btn-allow { background: #000; color: #fff; }
 .color .btn-allow { background: #1e7b34; border-color: #1e7b34; }
 .btn-release { font-weight: normal; }
+
+/* One-tap replies on finished sessions. */
+.reply { margin-top: 0.35em; display: flex; flex-wrap: wrap; gap: 0.25em; align-items: center; }
+.reply-label { width: 100%; font-size: 0.72em; font-weight: bold; }
+.chip { font: inherit; font-size: 0.8em; padding: 0.35em 0.55em; border: 2px solid #000; background: #fff; color: #000; cursor: pointer; }

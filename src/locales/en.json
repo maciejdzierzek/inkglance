@@ -106,5 +106,10 @@
 	"approvals.away": "when I'm away",
 	"approvals.always": "always",
 	"settings.awaySeconds": "Away = no keyboard or mouse for",
-	"settings.approvalTimeoutMinutes": "Hand back to the computer after"
+	"settings.approvalTimeoutMinutes": "Hand back to the computer after",
+	"reply.label": "Reply:",
+	"templates.default": "Yes, continue|Continue|Commit|Go back to the task",
+	"settings.repliesTitle": "Replies from the reader",
+	"settings.replies": "reply buttons on finished sessions",
+	"settings.replyWindowHours": "Keep replies open for"
 }
