@@ -26,9 +26,10 @@ a { color: #000; }
 .tile-label { display: block; font-size: 0.72em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile.on { border-color: #000; color: #000; }
 .tile.on.tile-needsYou, .tile.on.tile-finished { background: #000; color: #fff; }
-.color .tile.on.tile-needsYou { background: #c8102e; border-color: #c8102e; }
-.color .tile.on.tile-finished { background: #1e7b34; border-color: #1e7b34; }
-.color .tile.on.tile-working { border-color: #0b5394; color: #0b5394; }
+.color .tile.on.tile-needsYou { background: var(--need); border-color: var(--need); color: var(--need-ink); }
+.color .tile.on.tile-finished { background: var(--done); border-color: var(--done); color: var(--done-ink); }
+.color .tile.on.tile-working { border: 3px solid var(--work); }
+.color .tile.on.tile-working .i { color: var(--work); }
 
 /* Limits: both windows on one row; tap for the limits screen. */
 .limits { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15em 0.9em; margin: 0.35em 0 0.1em; font-size: 0.78em; color: #000; text-decoration: none; }
@@ -38,7 +39,7 @@ a { color: #000; }
 .meter { height: 0.8em; min-width: 3em; border: 2px solid #000; position: relative; overflow: hidden; }
 .meter span { position: absolute; top: 0; left: 0; bottom: 0; background: #000; }
 .color .meter-warm span { background: #b45f06; }
-.color .meter-hot span { background: #c8102e; }
+.color .meter-hot span { background: var(--need); }
 .limits-error { display: block; color: #333; font-style: italic; }
 
 /* The board: cards in priority order. JavaScript deals them into columns
@@ -61,12 +62,12 @@ a { color: #000; }
 .st-finished .band { font-size: 0.9em; }
 .st-finished .band-time { font-weight: bold; font-size: 1.3em; }
 .st-working .band { border-bottom: 2px solid #000; }
-.color .st-needsYou { border-color: #c8102e; }
-.color .st-needsYou .band { background: #c8102e; }
-.color .st-finished { border-color: #1e7b34; }
-.color .st-finished .band { background: #1e7b34; }
-.color .st-working { border-color: #0b5394; }
-.color .st-working .band { background: #0b5394; color: #fff; border-bottom: none; }
+.color .st-needsYou { border-color: var(--need); }
+.color .st-needsYou .band { background: var(--need); color: var(--need-ink); }
+.color .st-finished { border-color: var(--done); }
+.color .st-finished .band { background: var(--done); color: var(--done-ink); }
+.color .st-working { border-color: var(--work); }
+.color .st-working .band { background: var(--work); color: var(--work-ink); border-bottom: none; }
 
 .title { font-weight: bold; margin-top: 0.25em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sub { display: flex; align-items: center; gap: 0.3em; margin-top: 0.1em; font-size: 0.75em; color: #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -89,7 +90,7 @@ a { color: #000; }
 .chip { font: inherit; font-size: 0.8em; padding: 0.4em 0.55em; border: 2px solid #000; background: #fff; color: #000; cursor: pointer; }
 .done-later { margin-top: 0.35em; text-align: right; }
 .done-later .chip { font-weight: bold; }
-.color .done-later .chip { border-color: #1e7b34; color: #1e7b34; }
+.color .done-later .chip { border-color: var(--done); border-width: 3px; }
 
 /* Permission requests and questions. */
 .ask { margin-top: 0.25em; font-size: 0.85em; }
@@ -98,7 +99,7 @@ a { color: #000; }
 .approval-actions .button { flex: 1 1 40%; padding: 0.55em 0.3em; font-size: 0.95em; }
 .approval-actions .btn-release { flex-basis: 100%; }
 .btn-allow { background: #000; color: #fff; }
-.color .btn-allow { background: #1e7b34; border-color: #1e7b34; }
+.color .btn-allow { background: var(--done); border-color: var(--done); color: var(--done-ink); }
 .btn-release { font-weight: normal; }
 
 .error { border: 3px solid #000; padding: 0.5em; margin: 0.6em 0; }
@@ -160,7 +161,7 @@ html.flash { filter: invert(1); background: #000; }
 .chart .value { font-size: 14px; font-weight: bold; fill: #000; }
 .chart .bar { fill: #000; }
 .chart .bar-current { fill: #fff; stroke: #000; stroke-width: 2.5; }
-.color .chart .grid-max { stroke: #c8102e; }
+.color .chart .grid-max { stroke: var(--need); }
 
 /* Settings tabs and the reply-button editor. */
 /* Real tabs, not buttons: inactive tabs are grey and lower, the active one is
@@ -177,10 +178,15 @@ html.flash { filter: invert(1); background: #000; }
 
 /* About tab and the update badge. */
 .update-badge { font-size: 0.75em; font-weight: bold; padding: 0.15em 0.45em; border: 2px solid #000; text-decoration: none; white-space: nowrap; }
-.color .update-badge { border-color: #1e7b34; color: #1e7b34; }
+.color .update-badge { border-color: var(--done); border-width: 3px; }
 .notes { margin: 0.3em 0 0.6em 1.1em; padding: 0; font-size: 0.85em; }
 
 /* Color test page. */
 .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5em; }
 .sw-fill { height: 3em; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 1.3em; }
 .sw-text { margin-top: 0.25em; border: 4px solid; text-align: center; font-weight: bold; font-size: 1.6em; }
+
+/* Color picker squares in Settings. */
+.swatch span { display: flex; align-items: center; justify-content: center; width: 2.6em; min-width: 0; height: 2.6em; padding: 0; border: 2px solid #000; font-weight: bold; }
+.choice.swatch input:checked + span { outline: 4px solid #000; outline-offset: 2px; font-weight: bold; }
+.choice.swatch input:checked + span::after { content: "✓"; font-size: 1.3em; }

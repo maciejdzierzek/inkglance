@@ -10,7 +10,7 @@
 import { randomInt } from 'node:crypto';
 import { notify } from './platform.js';
 
-export const CODE_DIGITS = 6;
+const CODE_DIGITS = 6;
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
 export const MAX_CODES_PER_HOUR = 3;

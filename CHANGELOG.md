@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- State colors are chosen in Settings → Display (a row of color squares per
+  state); text on colored bands turns black or white for contrast. New
+  defaults measured on a Kaleido 3 screen: magenta (waiting), bright green
+  (done), bright blue (working) - dark colors look grey on color e-ink.
+  Settings → Display → Color test shows 16 swatches to compare on your reader.
+- Settings → Limits explains each limits source; README describes exactly what
+  is read from the Claude Code Usage extension's file. Credits section.
+- Dev tools: ESLint, Knip (unused files and exports), ShellCheck, cargo fmt
+  and clippy, gitleaks over the whole history in CI, Dependabot. A test runs
+  the real shell hook against a throwaway server.
+
 - New panel layout: four state tiles with icons and big numbers; plan limits
   on one row; one board of cards, most urgent first, dealt into columns without
   gaps (permission requests and questions included); every card has a colored

@@ -27,6 +27,14 @@
 		"tray:install": "sh scripts/tray-macos.sh install",
 		"tray:build": "sh scripts/tray-macos.sh build",
 		"tray:dev": "sh scripts/tray-macos.sh dev",
-		"demo": "node scripts/demo.js"
+		"demo": "node scripts/demo.js",
+		"lint": "eslint . && knip",
+		"lint:sh": "shellcheck -s sh src/hook.sh scripts/*.sh .githooks/*"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.14.0",
+		"globals": "^17.14.0",
+		"knip": "^6.45.1"
 	}
 }

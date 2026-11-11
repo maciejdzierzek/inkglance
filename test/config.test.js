@@ -45,3 +45,18 @@ test('templates: edit, remove, move up, add, reset', () => {
 	assert.deepEqual(f('newTemplate=D'), ['A', 'B2', 'C', 'D']);
 	assert.deepEqual(f('reset='), []);
 });
+
+test('state colors: #rrggbb only, defaults otherwise', async () => {
+	const { normalize } = await import('../src/config.js');
+	const c = normalize({ colorNeedsYou: '#FF8000', colorFinished: 'red', colorWorking: '#123' });
+	assert.equal(c.colorNeedsYou, '#ff8000');
+	assert.equal(c.colorFinished, '#00c853');
+	assert.equal(c.colorWorking, '#2196f3');
+});
+
+test('text on a colored fill picks the stronger contrast', async () => {
+	const { inkOn } = await import('../src/render.js');
+	assert.equal(inkOn('#ffcc00'), '#000');
+	assert.equal(inkOn('#0b5394'), '#fff');
+	assert.equal(inkOn('#000000'), '#fff');
+});

@@ -28,7 +28,11 @@ const TRAY_ID: &str = "inkglance";
 // ---------------------------------------------------------------- config --------
 
 fn home() -> PathBuf {
-    PathBuf::from(std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default())
+    PathBuf::from(
+        std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_default(),
+    )
 }
 
 fn config_dir() -> PathBuf {
@@ -80,23 +84,125 @@ fn log_path() -> PathBuf {
 fn tr(lang: &str, key: &str) -> &'static str {
     let pl = lang == "pl";
     match key {
-        "starting" => if pl { "InkGlance: uruchamianie…" } else { "InkGlance: starting…" },
-        "offline" => if pl { "InkGlance: serwer nie działa" } else { "InkGlance: server not running" },
-        "waiting" => if pl { "czeka" } else { "waiting" },
-        "working" => if pl { "pracuje" } else { "working" },
-        "done" => if pl { "gotowe" } else { "done" },
-        "idle" => if pl { "bezczynne" } else { "idle" },
-        "reader" => if pl { "Adres dla czytnika" } else { "Address for the reader" },
-        "open" => if pl { "Otwórz panel" } else { "Open panel" },
-        "settings" => if pl { "Ustawienia…" } else { "Settings…" },
-        "limits" => if pl { "Limity…" } else { "Limits…" },
-        "restart" => if pl { "Uruchom ponownie serwer" } else { "Restart server" },
-        "autostart" => if pl { "Uruchamiaj przy logowaniu" } else { "Open at login" },
-        "logs" => if pl { "Pokaż dziennik" } else { "Show log" },
-        "quit" => if pl { "Zakończ InkGlance" } else { "Quit InkGlance" },
-        "external" => if pl { " (usługa systemowa)" } else { " (system service)" },
-        "update" => if pl { "Nowa wersja" } else { "New version" },
-        "download" => if pl { "pobierz" } else { "download" },
+        "starting" => {
+            if pl {
+                "InkGlance: uruchamianie…"
+            } else {
+                "InkGlance: starting…"
+            }
+        }
+        "offline" => {
+            if pl {
+                "InkGlance: serwer nie działa"
+            } else {
+                "InkGlance: server not running"
+            }
+        }
+        "waiting" => {
+            if pl {
+                "czeka"
+            } else {
+                "waiting"
+            }
+        }
+        "working" => {
+            if pl {
+                "pracuje"
+            } else {
+                "working"
+            }
+        }
+        "done" => {
+            if pl {
+                "gotowe"
+            } else {
+                "done"
+            }
+        }
+        "idle" => {
+            if pl {
+                "bezczynne"
+            } else {
+                "idle"
+            }
+        }
+        "reader" => {
+            if pl {
+                "Adres dla czytnika"
+            } else {
+                "Address for the reader"
+            }
+        }
+        "open" => {
+            if pl {
+                "Otwórz panel"
+            } else {
+                "Open panel"
+            }
+        }
+        "settings" => {
+            if pl {
+                "Ustawienia…"
+            } else {
+                "Settings…"
+            }
+        }
+        "limits" => {
+            if pl {
+                "Limity…"
+            } else {
+                "Limits…"
+            }
+        }
+        "restart" => {
+            if pl {
+                "Uruchom ponownie serwer"
+            } else {
+                "Restart server"
+            }
+        }
+        "autostart" => {
+            if pl {
+                "Uruchamiaj przy logowaniu"
+            } else {
+                "Open at login"
+            }
+        }
+        "logs" => {
+            if pl {
+                "Pokaż dziennik"
+            } else {
+                "Show log"
+            }
+        }
+        "quit" => {
+            if pl {
+                "Zakończ InkGlance"
+            } else {
+                "Quit InkGlance"
+            }
+        }
+        "external" => {
+            if pl {
+                " (usługa systemowa)"
+            } else {
+                " (system service)"
+            }
+        }
+        "update" => {
+            if pl {
+                "Nowa wersja"
+            } else {
+                "New version"
+            }
+        }
+        "download" => {
+            if pl {
+                "pobierz"
+            } else {
+                "download"
+            }
+        }
         _ => "",
     }
 }
@@ -111,9 +217,15 @@ struct Server {
 struct UpdateUrl(Mutex<String>);
 
 fn http_get(port: u16, path: &str) -> Option<String> {
-    let mut s = TcpStream::connect_timeout(&([127, 0, 0, 1], port).into(), Duration::from_millis(800)).ok()?;
+    let mut s =
+        TcpStream::connect_timeout(&([127, 0, 0, 1], port).into(), Duration::from_millis(800))
+            .ok()?;
     s.set_read_timeout(Some(Duration::from_secs(3))).ok()?;
-    write!(s, "GET {path} HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n").ok()?;
+    write!(
+        s,
+        "GET {path} HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+    )
+    .ok()?;
     let mut buf = String::new();
     s.read_to_string(&mut buf).ok()?;
     let (head, body) = buf.split_once("\r\n\r\n")?;
@@ -124,7 +236,9 @@ fn http_get(port: u16, path: &str) -> Option<String> {
 }
 
 fn healthy(port: u16) -> bool {
-    http_get(port, "/health").map(|b| b.trim() == "ok").unwrap_or(false)
+    http_get(port, "/health")
+        .map(|b| b.trim() == "ok")
+        .unwrap_or(false)
 }
 
 fn find_node() -> Option<PathBuf> {
@@ -133,21 +247,36 @@ fn find_node() -> Option<PathBuf> {
     }
     if cfg!(windows) {
         let out = Command::new("where").arg("node").output().ok()?;
-        return String::from_utf8_lossy(&out.stdout).lines().next().map(|l| PathBuf::from(l.trim()));
+        return String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .next()
+            .map(|l| PathBuf::from(l.trim()));
     }
     // Apps started from Finder get a minimal PATH; ask the user's login shell.
     for shell in ["/bin/zsh", "/bin/bash"] {
-        if let Ok(out) = Command::new(shell).args(["-ilc", "command -v node"]).stderr(Stdio::null()).output() {
+        if let Ok(out) = Command::new(shell)
+            .args(["-ilc", "command -v node"])
+            .stderr(Stdio::null())
+            .output()
+        {
             // (never reached on Windows: returned above)
-            if let Some(line) = String::from_utf8_lossy(&out.stdout).lines().rev().find(|l| l.trim().starts_with('/')) {
+            if let Some(line) = String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .rev()
+                .find(|l| l.trim().starts_with('/'))
+            {
                 return Some(PathBuf::from(line.trim()));
             }
         }
     }
-    ["/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node"]
-        .iter()
-        .map(PathBuf::from)
-        .find(|p| p.exists())
+    [
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+        "/usr/bin/node",
+    ]
+    .iter()
+    .map(PathBuf::from)
+    .find(|p| p.exists())
 }
 
 fn server_dir(app: &AppHandle) -> Option<PathBuf> {
@@ -162,7 +291,9 @@ fn start_server(app: &AppHandle) {
     if healthy(conf.port) {
         return; // a server (e.g. the LaunchAgent service) already runs: attach to it
     }
-    let (Some(node), Some(dir)) = (find_node(), server_dir(app)) else { return };
+    let (Some(node), Some(dir)) = (find_node(), server_dir(app)) else {
+        return;
+    };
     // The log holds pairing codes: readable by this user only.
     let mut opts = OpenOptions::new();
     opts.create(true).append(true);
@@ -184,7 +315,11 @@ fn start_server(app: &AppHandle) {
     // terminal. Apps started from Finder get a minimal PATH, so ask the login
     // shell. (Windows apps inherit the user's full PATH.)
     #[cfg(not(windows))]
-    if let Ok(out) = Command::new("/bin/zsh").args(["-ilc", "echo $PATH"]).stderr(Stdio::null()).output() {
+    if let Ok(out) = Command::new("/bin/zsh")
+        .args(["-ilc", "echo $PATH"])
+        .stderr(Stdio::null())
+        .output()
+    {
         if let Some(path) = String::from_utf8_lossy(&out.stdout).lines().last() {
             if path.contains('/') {
                 cmd.env("PATH", path.trim());
@@ -221,7 +356,10 @@ fn lan_ip() -> Option<String> {
 
 fn panel_url(conf: &Conf, path: &str) -> String {
     let sep = if path.contains('?') { '&' } else { '?' };
-    format!("http://127.0.0.1:{}{}{}t={}", conf.port, path, sep, conf.token)
+    format!(
+        "http://127.0.0.1:{}{}{}t={}",
+        conf.port, path, sep, conf.token
+    )
 }
 
 fn open_window(app: &AppHandle, label: &str, path: &str, title: &str) {
@@ -244,7 +382,10 @@ fn open_window(app: &AppHandle, label: &str, path: &str, title: &str) {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(Server { child: None }))
         .manage(UpdateUrl(Mutex::new(String::new())))
@@ -256,12 +397,16 @@ fn main() {
             let handle = app.handle().clone();
             start_server(&handle);
 
-            let status = MenuItem::with_id(app, "status", tr(&lang, "starting"), false, None::<&str>)?;
-            let reader = MenuItem::with_id(app, "reader", tr(&lang, "reader"), false, None::<&str>)?;
+            let status =
+                MenuItem::with_id(app, "status", tr(&lang, "starting"), false, None::<&str>)?;
+            let reader =
+                MenuItem::with_id(app, "reader", tr(&lang, "reader"), false, None::<&str>)?;
             let open = MenuItem::with_id(app, "open", tr(&lang, "open"), true, None::<&str>)?;
-            let settings = MenuItem::with_id(app, "settings", tr(&lang, "settings"), true, None::<&str>)?;
+            let settings =
+                MenuItem::with_id(app, "settings", tr(&lang, "settings"), true, None::<&str>)?;
             let limits = MenuItem::with_id(app, "limits", tr(&lang, "limits"), true, None::<&str>)?;
-            let restart = MenuItem::with_id(app, "restart", tr(&lang, "restart"), true, None::<&str>)?;
+            let restart =
+                MenuItem::with_id(app, "restart", tr(&lang, "restart"), true, None::<&str>)?;
             let logs = MenuItem::with_id(app, "logs", tr(&lang, "logs"), true, None::<&str>)?;
             // First run: open at login by default (the usual for menu-bar apps);
             // afterwards the menu checkbox decides.
@@ -272,19 +417,41 @@ fn main() {
                 let _ = fs::write(&marker, "{\"autostartInitialized\": true}\n");
             }
             let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
-            let autostart = CheckMenuItem::with_id(app, "autostart", tr(&lang, "autostart"), true, autostart_on, None::<&str>)?;
+            let autostart = CheckMenuItem::with_id(
+                app,
+                "autostart",
+                tr(&lang, "autostart"),
+                true,
+                autostart_on,
+                None::<&str>,
+            )?;
             let quit = MenuItem::with_id(app, "quit", tr(&lang, "quit"), true, None::<&str>)?;
             let update = MenuItem::with_id(app, "update", "InkGlance", false, None::<&str>)?;
             let sep = || PredefinedMenuItem::separator(app);
             let menu = Menu::with_items(
                 app,
-                &[&status, &reader, &sep()?, &open, &settings, &limits, &sep()?, &restart, &logs, &autostart, &sep()?, &update, &quit],
+                &[
+                    &status,
+                    &reader,
+                    &sep()?,
+                    &open,
+                    &settings,
+                    &limits,
+                    &sep()?,
+                    &restart,
+                    &logs,
+                    &autostart,
+                    &sep()?,
+                    &update,
+                    &quit,
+                ],
             )?;
 
             // macOS: a monochrome template icon that follows the menu bar's colour.
             // Windows / Linux: the colour icon (a black glyph vanishes on a dark taskbar).
             #[cfg(target_os = "macos")]
-            let icon = Image::from_bytes(include_bytes!("../../../assets/tray/iconTemplate@2x.png"))?;
+            let icon =
+                Image::from_bytes(include_bytes!("../../../assets/tray/iconTemplate@2x.png"))?;
             #[cfg(not(target_os = "macos"))]
             let icon = Image::from_bytes(include_bytes!("../icons/32x32.png"))?;
 
@@ -298,9 +465,13 @@ fn main() {
                     let lang = read_conf().lang;
                     match event.id().as_ref() {
                         "open" => {
-                            let _ = app.opener().open_url(panel_url(&read_conf(), "/"), None::<&str>);
+                            let _ = app
+                                .opener()
+                                .open_url(panel_url(&read_conf(), "/"), None::<&str>);
                         }
-                        "settings" => open_window(app, "settings", "/settings", tr(&lang, "settings")),
+                        "settings" => {
+                            open_window(app, "settings", "/settings", tr(&lang, "settings"))
+                        }
                         "limits" => open_window(app, "limits", "/limits", tr(&lang, "limits")),
                         "restart" => {
                             stop_server(app);
@@ -315,11 +486,17 @@ fn main() {
                             }
                         }
                         "logs" => {
-                            let _ = app.opener().open_path(log_path().to_string_lossy(), None::<&str>);
+                            let _ = app
+                                .opener()
+                                .open_path(log_path().to_string_lossy(), None::<&str>);
                         }
                         "autostart" => {
                             let al = app.autolaunch();
-                            let _ = if al.is_enabled().unwrap_or(false) { al.disable() } else { al.enable() };
+                            let _ = if al.is_enabled().unwrap_or(false) {
+                                al.disable()
+                            } else {
+                                al.enable()
+                            };
                         }
                         "quit" => {
                             stop_server(app);
@@ -340,7 +517,11 @@ fn main() {
                     let exited = {
                         let state = handle.state::<Mutex<Server>>();
                         let mut s = state.lock().unwrap();
-                        let gone = s.child.as_mut().map(|c| matches!(c.try_wait(), Ok(Some(_)))).unwrap_or(true);
+                        let gone = s
+                            .child
+                            .as_mut()
+                            .map(|c| matches!(c.try_wait(), Ok(Some(_))))
+                            .unwrap_or(true);
                         if gone {
                             s.child = None;
                         }
@@ -357,10 +538,24 @@ fn main() {
                 match state {
                     Some(v) => {
                         let c = &v["counts"];
-                        let (w, k, i) = (c["needsYou"].as_u64().unwrap_or(0), c["working"].as_u64().unwrap_or(0), c["idle"].as_u64().unwrap_or(0));
+                        let (w, k, i) = (
+                            c["needsYou"].as_u64().unwrap_or(0),
+                            c["working"].as_u64().unwrap_or(0),
+                            c["idle"].as_u64().unwrap_or(0),
+                        );
                         let f = c["finished"].as_u64().unwrap_or(0);
-                        let external = if owns_server(&handle) { "" } else { tr(&lang, "external") };
-                        let text = format!("{w} {} · {f} {} · {k} {} · {i} {}{external}", tr(&lang, "waiting"), tr(&lang, "done"), tr(&lang, "working"), tr(&lang, "idle"));
+                        let external = if owns_server(&handle) {
+                            ""
+                        } else {
+                            tr(&lang, "external")
+                        };
+                        let text = format!(
+                            "{w} {} · {f} {} · {k} {} · {i} {}{external}",
+                            tr(&lang, "waiting"),
+                            tr(&lang, "done"),
+                            tr(&lang, "working"),
+                            tr(&lang, "idle")
+                        );
                         let _ = status.set_text(&text);
                         let version = v["version"].as_str().unwrap_or("");
                         let url = v["update"]["url"].as_str().unwrap_or("").to_string();
@@ -369,7 +564,11 @@ fn main() {
                             let _ = update.set_enabled(false);
                         } else {
                             let latest = v["update"]["version"].as_str().unwrap_or("");
-                            let _ = update.set_text(format!("{} {latest} — {}", tr(&lang, "update"), tr(&lang, "download")));
+                            let _ = update.set_text(format!(
+                                "{} {latest} — {}",
+                                tr(&lang, "update"),
+                                tr(&lang, "download")
+                            ));
                             let _ = update.set_enabled(true);
                         }
                         *handle.state::<UpdateUrl>().0.lock().unwrap() = url;
@@ -392,7 +591,11 @@ fn main() {
                         }
                     }
                 }
-                let port = if conf.port == 80 { String::new() } else { format!(":{}", conf.port) };
+                let port = if conf.port == 80 {
+                    String::new()
+                } else {
+                    format!(":{}", conf.port)
+                };
                 if let Some(ip) = lan_ip() {
                     let _ = reader.set_text(format!("{}: http://{ip}{port}", tr(&lang, "reader")));
                 }

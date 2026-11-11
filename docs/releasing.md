@@ -35,3 +35,11 @@
 The Claude Code plugin is the repository itself (`.claude-plugin/`). Users get
 new versions with `/plugin update inkglance`. Validate before a release:
 `claude plugin validate .`
+
+## Third-party notices (before the first release)
+
+The menu-bar app bundles Tauri and other Rust crates (MIT / Apache-2.0), whose
+licenses require their notices to travel with binaries. Generate them with
+[cargo-about](https://github.com/EmbarkStudios/cargo-about) (or `cargo license`)
+from `tray/src-tauri`, add the file to the app resources, and attach it to the
+release. The Node server has no runtime dependencies.

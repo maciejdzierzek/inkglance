@@ -214,10 +214,15 @@ computer as usual. Other modes: *always* and *never*.
 - **Plan limits** (Pro / Max subscriptions) - the cheapest source available
   (setting *Limits source*, default *automatic*):
   1. **[Claude Code Usage](https://marketplace.visualstudio.com/items?itemName=growthjack.claude-code-usage)**
-     ([source](https://github.com/ClaudeCodeUsage/ClaudeCodeUsage), MIT), a VS Code
-     extension that keeps its quota observations in a local file. InkGlance
-     reads that file: no network request of its own. Install with
-     `code --install-extension growthjack.claude-code-usage`.
+     ([source](https://github.com/ClaudeCodeUsage/ClaudeCodeUsage), MIT, by another
+     author) - a VS Code extension that tracks your plan quota. InkGlance only
+     **reads the file it keeps on your disk**
+     (`…/Code/User/globalStorage/growthjack.claude-code-usage/quota-observations-v2.json`):
+     for each window (5 hours, week) the used fraction, the reset time and when
+     it was observed - nothing else, no request of its own. The extension
+     itself talks to Anthropic with your Claude Code login to get those numbers;
+     what it does and stores is described in its README - read it before
+     installing. Install: `code --install-extension growthjack.claude-code-usage`.
   2. **Status line** - Claude Code passes plan limits to status line commands.
      `npm run statusline:print` prints a `statusLine` entry for
      `~/.claude/settings.json`. **If you already have a status line, it would
@@ -295,7 +300,9 @@ InkGlance has no telemetry and no account.
 
 - **Reads on your computer:** the session list (`claude agents --json`),
   session transcripts in `~/.claude/projects/` (titles, prompts, token counts),
-  the Claude Code Usage extension's file, keyboard/mouse idle time (for *when
+  the Claude Code Usage extension's quota file (if you installed that
+  extension - see [Where the data comes from](#where-the-data-comes-from)),
+  keyboard/mouse idle time (for *when
   I'm away*), and - only for the usage endpoint fallback - the login Claude Code
   stores.
 - **Writes on your computer:** `~/.config/inkglance/` (config with the access
@@ -399,6 +406,24 @@ git config core.hooksPath .githooks   # once per clone
 
 Zero runtime dependencies. Screenshots and examples use made-up data only.
 See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Credits
+
+- **[Claude Code Usage](https://github.com/ClaudeCodeUsage/ClaudeCodeUsage)**
+  (MIT) - InkGlance reads its local quota file as the preferred, zero-request
+  source of plan limits. No code is taken from it.
+- **[Tauri](https://tauri.app)** (MIT / Apache-2.0) - the menu-bar app, with
+  its plugins and Rust crates (MIT / Apache-2.0); release builds include
+  their license notices.
+- **[Contributor Covenant](https://www.contributor-covenant.org)** (CC BY 4.0) -
+  our [Code of Conduct](CODE_OF_CONDUCT.md).
+- **Ideas, no code:** answering Claude from another device -
+  [claude-agents-dashboard](https://github.com/futin/claude-agents-dashboard);
+  a menu-bar session counter - [cc-status-bar](https://github.com/usedhonda/cc-status-bar);
+  e-ink layout principles (big numbers, little text) - the
+  [TRMNL design system](https://trmnl.com/blog/design-system).
+- Built with [Claude Code](https://claude.com/claude-code). Icons drawn for
+  InkGlance.
 
 ## License
 

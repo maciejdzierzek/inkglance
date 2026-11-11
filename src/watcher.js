@@ -3,7 +3,7 @@
 // the panel content would change. Readers poll the version (tiny request) and
 // refresh at once when it moves, instead of waiting for the full interval.
 
-export const WATCH_MS = 10 * 1000;
+const WATCH_MS = 10 * 1000;
 
 // Transitions worth an alert:
 //   needsYou - a session starts waiting for you (permission, question, input)

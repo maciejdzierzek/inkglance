@@ -68,7 +68,7 @@ function promptText(content) {
 	return '';
 }
 
-export function applyLine(state, entry) {
+function applyLine(state, entry) {
 	if (!entry || typeof entry !== 'object' || entry.isSidechain) return;
 	if (entry.entrypoint) state.entrypoint = entry.entrypoint;
 	switch (entry.type) {

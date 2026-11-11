@@ -169,5 +169,9 @@
 	"pair.locked": "Za dużo kodów w tej godzinie - zabezpieczenie przed zgadywaniem. Spróbuj za {minutes} min.",
 	"colors.title": "Test kolorów",
 	"colors.link": "Test kolorów tego ekranu",
-	"colors.intro": "Które numery na tym czytniku są wyraźnie kolorowe (nie szare)? Każdy kolor jest pokazany jako wypełnienie oraz jako tekst z ramką."
+	"colors.intro": "Które numery na tym czytniku są wyraźnie kolorowe (nie szare)? Każdy kolor jest pokazany jako wypełnienie oraz jako tekst z ramką.",
+	"settings.colorNeedsYou": "Kolor: czeka na Ciebie",
+	"settings.colorFinished": "Kolor: skończyła, Twoja kolej",
+	"settings.colorWorking": "Kolor: pracuje",
+	"usageSource.note": "Rozszerzenie = Claude Code Usage, rozszerzenie VS Code innego autora (w sklepie: growthjack.claude-code-usage). InkGlance tylko czyta jego plik z limitami na tym komputerze; to rozszerzenie samo pyta Anthropic. Pasek stanu = tylko sesje w terminalu. Anthropic = rzadkie zapytanie do api.anthropic.com z loginem Claude Code."
 }

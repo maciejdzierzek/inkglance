@@ -136,7 +136,7 @@ async function handle(req, res) {
 	// Hooks from Claude Code on this computer (src/hook.sh): loopback only, token in a header.
 	if (url.pathname.startsWith('/hook/') && req.method === 'POST') {
 		if (!isLoopback(req.socket.remoteAddress) || !sameToken(req.headers['x-inkglance-token'])) return send(res, 403, 'forbidden');
-		let input = {};
+		let input;
 		try {
 			input = JSON.parse(await readBody(req, 2 * 1024 * 1024));
 		} catch {

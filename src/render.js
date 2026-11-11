@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime, elapsed } from './i18n.js';
-import { SETTINGS_TABS, LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS, FINISHED_PRESETS } from './config.js';
+import { SETTINGS_TABS, LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS, FINISHED_PRESETS, COLOR_CHOICES, COLOR_KEYS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
 import { lineChart, barChart } from './charts.js';
@@ -20,10 +20,22 @@ const tildePath = (path) => {
 	return path.startsWith(home) ? '~' + path.slice(home.length) : path;
 };
 
+// Black or white text on a colored fill, whichever contrasts more.
+export function inkOn(hex) {
+	const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+	const [r, g, b] = [1, 3, 5].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255));
+	const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	return (L + 0.05) / 0.05 > 1.05 / (L + 0.05) ? '#000' : '#fff';
+}
+
+// The user's state colors as CSS variables (used only with the "color" class).
+const colorVars = (c) =>
+	[['need', c.colorNeedsYou], ['done', c.colorFinished], ['work', c.colorWorking]].map(([k, v]) => `--${k}:${v};--${k}-ink:${inkOn(v)}`).join(';');
+
 const compact = (lang, n) => new Intl.NumberFormat(lang, { notation: 'compact', maximumSignificantDigits: 3 }).format(n);
 
 // Builds a link that keeps the access token when the browser does not hold the cookie.
-export function makeHref(ctx) {
+function makeHref(ctx) {
 	return (path, params = {}) => {
 		const query = new URLSearchParams(params);
 		if (ctx.tokenInLinks) query.set('t', ctx.config.token);
@@ -182,7 +194,7 @@ ${live ? `<noscript><meta http-equiv="refresh" content="${config.refreshSeconds}
 <link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.png" type="image/png">
 <link rel="stylesheet" href="/style.css">
 </head>
-<body class="${config.color ? 'color' : 'mono'}">
+<body class="${config.color ? 'color' : 'mono'}"${config.color ? ` style="${colorVars(config)}"` : ''}>
 <div id="app">
 <div class="bar">
 <div class="bar-left">${summary}${updateBadge}</div>
@@ -274,7 +286,7 @@ ${rows.join('\n')}
 </article>`;
 }
 
-export function templatesFor(config) {
+function templatesFor(config) {
 	return config.templates.length ? config.templates : t(config.language, 'templates.default').split('|');
 }
 
@@ -457,7 +469,7 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 // Color test: numbered swatches as fills, text and borders, to see on the
 // reader itself which colors its screen really shows (color e-ink mutes dark
 // and mid tones a lot).
-export const SWATCHES = [
+const SWATCHES = [
 	'#c8102e', '#ff0000', '#e8001c', '#ff3b30',
 	'#1e7b34', '#00a03c', '#00c853', '#33cc33',
 	'#0b5394', '#0060ff', '#2196f3', '#00aaff',
@@ -500,6 +512,14 @@ export function settingsPage(ctx, { configFile, tab, installed }) {
 			)
 			.join('')}</div></fieldset>`;
 	const seconds = (x) => (x < 60 ? `${x} s` : `${x / 60} min`);
+	// A row of color squares; the chosen one carries a check mark.
+	const swatchGroup = (name) =>
+		`<fieldset><legend>${esc(t(lang, 'settings.' + name))}</legend><div class="choices">${[...new Set([...COLOR_CHOICES, config[name]])]
+			.map(
+				(c) =>
+					`<label class="choice swatch"><input type="radio" name="${name}" value="${c}"${c === config[name] ? ' checked' : ''}><span style="background:${c};color:${inkOn(c)}" title="${c}"></span></label>`,
+			)
+			.join('')}</div></fieldset>`;
 	const withCurrent = (presets, value) => [...new Set([...presets, value])].sort((a, b) => a - b);
 
 	let fields = '';
@@ -512,6 +532,7 @@ export function settingsPage(ctx, { configFile, tab, installed }) {
 			group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale),
 			group('refreshSeconds', withCurrent(REFRESH_PRESETS, config.refreshSeconds).map((x) => [x, seconds(x)]), config.refreshSeconds),
 			toggles('display', ['color', 'showDiagnostics']),
+			...(config.color ? COLOR_KEYS.map((key) => swatchGroup(key)) : []),
 			`<p><a href="${esc(href('/colors'))}">${esc(t(lang, 'colors.link'))}</a></p>`,
 		].join('');
 	} else if (current === 'cards') {
@@ -583,6 +604,7 @@ ${toggles('updates', ['updateCheck'])}`;
 		fields = [
 			toggles('limits', ['showLimits']),
 			group('usageSource', USAGE_SOURCES.map((u) => [u, t(lang, 'usageSource.' + u)]), config.usageSource),
+			`<p class="muted small">${esc(t(lang, 'usageSource.note'))}</p>`,
 			group('usageApiMinutes', USAGE_API_PRESETS.map((m) => [m, `${m} min`]), config.usageApiMinutes),
 		].join('');
 	}

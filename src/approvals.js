@@ -12,7 +12,7 @@
 // to the normal dialog, so the panel can only add a way to answer, never remove one.
 
 import { randomUUID } from 'node:crypto';
-import { idleSeconds, idleSecondsFast, idleCheckMs } from './platform.js';
+import { idleSecondsFast, idleCheckMs } from './platform.js';
 
 export const APPROVAL_MODES = ['off', 'away', 'always'];
 export const AWAY_PRESETS = [30, 60, 120, 300];
@@ -20,10 +20,9 @@ export const APPROVAL_TIMEOUT_PRESETS = [2, 5, 10];
 const BACK_AT_DESK_SECONDS = 5;
 const CHECK_MS = idleCheckMs(process.platform);
 
-export { idleSeconds };
 
 // Questions from Claude's AskUserQuestion tool, reduced to what the reader shows.
-export function questionsOf(input) {
+function questionsOf(input) {
 	const qs = input?.tool_input?.questions;
 	if (!Array.isArray(qs)) return [];
 	return qs.slice(0, 4).map((q) => ({

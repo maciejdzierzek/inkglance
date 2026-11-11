@@ -18,6 +18,7 @@
 EVENT="${1:-permission}"
 ENV_FILE="${INKGLANCE_HOOK_ENV:-$HOME/.config/inkglance/hook.env}"
 [ -r "$ENV_FILE" ] || exit 0
+# shellcheck source=/dev/null  # written by the server: port and token only
 . "$ENV_FILE"
 [ -n "$INKGLANCE_PORT" ] && [ -n "$INKGLANCE_TOKEN" ] || exit 0
 

@@ -169,5 +169,9 @@
 	"pair.locked": "Too many codes this hour - a safeguard against guessing. Try again in {minutes} min.",
 	"colors.title": "Color test",
 	"colors.link": "Color test for this screen",
-	"colors.intro": "Which numbers look clearly colored on this reader (not grey)? Each color is shown as a fill and as text with a border."
+	"colors.intro": "Which numbers look clearly colored on this reader (not grey)? Each color is shown as a fill and as text with a border.",
+	"settings.colorNeedsYou": "Color: waiting for you",
+	"settings.colorFinished": "Color: done, your turn",
+	"settings.colorWorking": "Color: working",
+	"usageSource.note": "Extension = Claude Code Usage, a VS Code extension by another author (marketplace: growthjack.claude-code-usage). InkGlance only reads its quota file on this computer; the extension itself asks Anthropic. Status line = terminal sessions only. Anthropic = a rare request to api.anthropic.com with your Claude Code login."
 }

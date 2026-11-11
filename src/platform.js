@@ -99,7 +99,7 @@ export function playSound(name, platform = process.platform) {
 	run(soundCommand(platform, name));
 }
 
-export function idleSeconds(platform = process.platform) {
+function idleSeconds(platform = process.platform) {
 	return new Promise((resolve) => {
 		run(idleCommand(platform), (err, out) => resolve(err ? null : parseIdle(platform, out)), { maxBuffer: 4 * 1024 * 1024 });
 	});

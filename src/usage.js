@@ -25,7 +25,7 @@ const SEVEN_DAYS = 7 * 86400 * 1000;
 const LOCAL_STALE_MS = 30 * 60 * 1000; // older local data -> let "auto" try the API
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage';
 
-export function extensionFile(home = homedir()) {
+function extensionFile(home = homedir()) {
 	const base =
 		platform === 'darwin'
 			? join(home, 'Library', 'Application Support', 'Code', 'User', 'globalStorage')

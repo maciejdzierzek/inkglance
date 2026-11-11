@@ -16,9 +16,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DAY = 24 * 3600 * 1000;
-export const DEFAULT_REPO = 'maciejdzierzek/inkglance';
+const DEFAULT_REPO = 'maciejdzierzek/inkglance';
 
-export const currentVersion = () => JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+const currentVersion = () => JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
 
 export function installMethod(root = ROOT, env = process.env) {
 	if (env.INKGLANCE_INSTALL) return env.INKGLANCE_INSTALL;

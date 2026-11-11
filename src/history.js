@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { configPath } from './config.js';
-import { toMs, PERIODS } from './usage.js';
+import { PERIODS } from './usage.js';
 
 const HOUR = 3600 * 1000;
 const KEEP_MS = 200 * 86400 * 1000;
@@ -79,7 +79,7 @@ export function record(usage) {
 	}
 }
 
-export function ownHistory() {
+function ownHistory() {
 	const s = loadStore();
 	return { fiveHour: [...s.fiveHour], sevenDay: [...s.sevenDay] };
 }
@@ -118,4 +118,3 @@ export function historyFor(usageSourceJson) {
 	return usageSourceJson ? fromExtension(usageSourceJson) : ownHistory();
 }
 
-export { toMs };

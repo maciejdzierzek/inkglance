@@ -26,6 +26,10 @@ export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
 // How long a finished turn stays in "your turn" before the session counts as idle (0 = off).
 export const FINISHED_PRESETS = [0, 1, 2, 4, 8, 24];
 export const ALERT_KINDS = ['needsYou', 'finished'];
+// State colors to pick from on the reader. Color e-ink (Kaleido) mutes dark and
+// mid tones, so bright, clean colors show best; the file accepts any #rrggbb.
+export const COLOR_CHOICES = ['#ff00ff', '#e8001c', '#c8102e', '#ff8000', '#ffcc00', '#00c853', '#1e7b34', '#00cccc', '#2196f3', '#0b5394', '#000000'];
+export const COLOR_KEYS = ['colorNeedsYou', 'colorFinished', 'colorWorking'];
 export { MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES };
 export const USAGE_API_PRESETS = [15, 30, 60];
 export { APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS };
@@ -41,6 +45,10 @@ export const DEFAULTS = Object.freeze({
 	hideIdleAfterHours: 24,
 	finishedHours: 4,
 	color: true,
+	// Defaults measured on a Kaleido 3 screen (PocketBook Verse Pro Color).
+	colorNeedsYou: '#ff00ff',
+	colorFinished: '#00c853',
+	colorWorking: '#2196f3',
 	fontScale: 1,
 	showDiagnostics: true,
 	alertOn: ['needsYou', 'finished'],
@@ -103,6 +111,7 @@ export function normalize(input = {}, base = DEFAULTS) {
 		hideIdleAfterHours: clampInt(input.hideIdleAfterHours, 0, 24 * 30, base.hideIdleAfterHours),
 		finishedHours: clampInt(input.finishedHours, 0, 24 * 7, base.finishedHours),
 		color: toBool(input.color, base.color),
+		...Object.fromEntries(COLOR_KEYS.map((k) => [k, /^#[0-9a-fA-F]{6}$/.test(input[k] || '') ? input[k].toLowerCase() : base[k]])),
 		fontScale: FONT_SCALES.includes(scale) ? scale : base.fontScale,
 		showDiagnostics: toBool(input.showDiagnostics, base.showDiagnostics),
 		alertOn: Array.isArray(input.alertOn) ? ALERT_KINDS.filter((k) => input.alertOn.includes(k)) : base.alertOn,
@@ -132,7 +141,7 @@ export function normalize(input = {}, base = DEFAULTS) {
 	};
 }
 
-export function newToken() {
+function newToken() {
 	return randomBytes(18).toString('base64url');
 }
 
@@ -149,7 +158,7 @@ export function loadConfig(path = configPath()) {
 	try {
 		raw = JSON.parse(readFileSync(path, 'utf8'));
 	} catch (err) {
-		if (err.code !== 'ENOENT') throw new Error(`Cannot read config ${path}: ${err.message}`);
+		if (err.code !== 'ENOENT') throw new Error(`Cannot read config ${path}: ${err.message}`, { cause: err });
 	}
 	const config = normalize(raw);
 	if (!config.token) {
@@ -168,7 +177,7 @@ export function saveConfig(config, path = configPath()) {
 // Settings screen tabs and the fields each one saves. A tab saves only its own
 // fields, so an unchecked box on one tab never switches off something on another.
 export const SETTINGS_TABS = {
-	display: ['language', 'orientation', 'columns', 'fontScale', 'refreshSeconds', 'color', 'showDiagnostics'],
+	display: ['language', 'orientation', 'columns', 'fontScale', 'refreshSeconds', 'color', 'colorNeedsYou', 'colorFinished', 'colorWorking', 'showDiagnostics'],
 	cards: ['cardFields', 'finishedHours', 'hideIdleAfterHours'],
 	replies: ['templates', 'replies', 'replyWindowHours', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes'],
 	alerts: ['alertOn', 'macSound', 'macNotification', 'readerFlash', 'macSoundName', 'quietHours'],
@@ -180,7 +189,7 @@ const LISTS = ['cardFields', 'alertOn'];
 
 // Reply buttons edited on the reader: rows of text fields plus remove / move-up
 // buttons and one field for a new button. Empty rows disappear.
-export function templatesFromForm(form, current) {
+function templatesFromForm(form, current) {
 	if (form.get('reset') !== null) return [];
 	let list = form.getAll('template').map((x) => x.trim());
 	const remove = form.get('remove');

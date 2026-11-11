@@ -1,0 +1,16 @@
+# Weekly update proposals as pull requests. The panel itself has no runtime
+# dependencies; these are dev tools, the menu-bar app and CI actions.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: npm
+    directory: /tray
+    schedule: { interval: weekly }
+  - package-ecosystem: cargo
+    directory: /tray/src-tauri
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

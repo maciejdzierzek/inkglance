@@ -134,8 +134,3 @@ export function dismiss(sessionId, turnEndedAt) {
 	if (dismissed.size > 500) dismissed.delete(dismissed.keys().next().value);
 	cache = { at: 0, result: null };
 }
-
-export function _resetCache() {
-	cache = { at: 0, result: null };
-	pending = null;
-}
