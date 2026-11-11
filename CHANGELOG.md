@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Refresh button in the top bar.
+- `npm run service:install`: run the panel as a macOS background service.
+
 - Orientation setting: automatic, or rotate the page left/right for a reader
   standing on its side whose browser stays portrait.
 

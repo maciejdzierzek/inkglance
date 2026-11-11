@@ -35,6 +35,8 @@ const ICONS = {
 		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>',
 	fullscreen:
 		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/></svg>',
+	refresh:
+		'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M20 11a8 8 0 1 0-2.3 5.7"/><path fill="currentColor" d="M21 4v7h-7z"/></svg>',
 	back: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M15 4l-8 8 8 8"/></svg>',
 };
 
@@ -92,12 +94,15 @@ function layout(ctx, { title, active, summary, body, live }) {
 	const { config } = ctx;
 	const lang = config.language;
 	const href = makeHref(ctx);
+	const refreshButton = live
+		? `<a class="icon" href="${esc(href(ctx.path, ctx.keepParams))}" data-live title="${esc(t(lang, 'nav.refresh'))}">${ICONS.refresh}</a>`
+		: '';
 	const right =
 		active === 'settings'
 			? `<a class="icon" href="${esc(href('/'))}" title="${esc(t(lang, 'nav.back'))}">${ICONS.back}<span>${esc(t(lang, 'nav.back'))}</span></a>`
 			: `<a class="icon" href="${esc(href('/settings'))}" title="${esc(t(lang, 'nav.settings'))}">${ICONS.settings}</a>`;
 	const footer = [
-		`<a href="${esc(href(ctx.path, ctx.keepParams))}" data-live>${esc(t(lang, 'footer.rendered', { time: clockTime(lang, ctx.now) }))}</a>`,
+		esc(t(lang, 'footer.rendered', { time: clockTime(lang, ctx.now) })),
 		live ? esc(t(lang, 'footer.refresh', { seconds: config.refreshSeconds })) : '',
 	]
 		.filter(Boolean)
@@ -116,6 +121,7 @@ ${live ? `<noscript><meta http-equiv="refresh" content="${config.refreshSeconds}
 <div class="bar">
 <div class="bar-left">${summary}</div>
 <div class="bar-right">
+${refreshButton}
 <button type="button" class="icon" id="fs" hidden title="${esc(t(lang, 'nav.fullscreen'))}">${ICONS.fullscreen}</button>
 ${right}
 </div>

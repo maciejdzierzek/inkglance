@@ -5,11 +5,19 @@
 	"license": "MIT",
 	"type": "module",
 	"private": true,
-	"engines": { "node": ">=20" },
-	"bin": { "inkai": "src/server.js" },
+	"engines": {
+		"node": ">=20"
+	},
+	"bin": {
+		"inkai": "src/server.js"
+	},
 	"scripts": {
 		"start": "node src/server.js",
 		"test": "node --test",
-		"check": "sh scripts/check.sh"
+		"check": "sh scripts/check.sh",
+		"service:install": "sh scripts/service-macos.sh install",
+		"service:uninstall": "sh scripts/service-macos.sh uninstall",
+		"service:status": "sh scripts/service-macos.sh status",
+		"service:logs": "sh scripts/service-macos.sh logs"
 	}
 }

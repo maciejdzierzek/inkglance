@@ -59,5 +59,6 @@
 	"settings.orientation": "Orientation",
 	"orientation.auto": "automatic",
 	"orientation.left": "rotate left",
-	"orientation.right": "rotate right"
+	"orientation.right": "rotate right",
+	"nav.refresh": "Refresh"
 }

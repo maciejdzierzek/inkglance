@@ -57,6 +57,15 @@ on 443, so they fall back to plain HTTP.
 macOS may ask whether Node may accept incoming connections - allow it, the
 reader connects over your local network.
 
+## Run it in the background (macOS)
+
+```sh
+npm run service:install    # starts at login, restarts if it stops
+npm run service:status
+npm run service:logs       # the pairing code is printed here too
+npm run service:uninstall
+```
+
 ## Configuration
 
 Settings live in `~/.config/inkai/config.json` (override with `INKAI_CONFIG`),
