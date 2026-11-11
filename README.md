@@ -30,6 +30,9 @@ is plain HTML and works in any browser.
   hours.
 - **Permission requests on the reader**: *Allow*, *Deny* or *On computer*, with
   the command or file being asked about (see below).
+- **Claude's questions on the reader**: when Claude asks a multiple-choice
+  question, its options appear as big buttons; your tap is delivered as a normal
+  answer.
 - **One-tap replies** on sessions that finished their turn ("Yes, continue",
   "Commit", your own) - in parallel with the computer, never instead of it.
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
@@ -74,7 +77,7 @@ is plain HTML and works in any browser.
 ## Answering from the reader
 
 ```sh
-npm run hooks:install     # adds three hooks to ~/.claude/settings.json (with a backup)
+npm run hooks:install     # adds four hooks to ~/.claude/settings.json (with a backup)
 npm run hooks:status
 npm run hooks:uninstall   # removes only InkGlance's entries (with a backup)
 ```
@@ -96,9 +99,14 @@ waiting session costs one idle curl process (about 5 MB).
 Reply buttons come from `templates` in the config file; empty means the
 language's defaults.
 
-### Permission requests: when you are away
+### Permission requests and questions: when you are away
 
-Permission requests cannot be answered in parallel: while the panel holds a
+A **PermissionRequest** hook brings permission requests to the reader, and a
+**PreToolUse** hook on `AskUserQuestion` brings Claude's multiple-choice
+questions (the answer fills the tool's own `answers` field, so Claude receives
+it exactly like an answer typed on the computer).
+
+Neither can be answered in parallel: while the panel holds a
 request, Claude Code does not show
 its own permission dialog - it shows it only after the hook finishes. So by
 default (*when I'm away*) InkGlance holds a request only when your keyboard and
@@ -228,7 +236,7 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 1. Session list, settings, alerts, plan limits - **done**
 2. Allow / deny permission requests, one-tap replies - **done**
 3. Usage charts from the limits history
-4. Answer `AskUserQuestion` choices from the reader
+4. Answer Claude's multiple-choice questions from the reader - **done**
 5. Jump to the session's window on the computer
 
 ## Development

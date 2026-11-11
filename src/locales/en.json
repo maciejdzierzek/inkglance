@@ -95,13 +95,13 @@
 	"where.claude-desktop": "Claude app",
 	"where.sdk-cli": "SDK",
 	"where.sdk-ts": "SDK",
-	"approval.section": "Permission requests",
+	"approval.section": "Waiting for your decision",
 	"approval.badge": "PERMISSION",
 	"approval.allow": "Allow",
 	"approval.deny": "Deny",
 	"approval.release": "On computer",
 	"approval.deniedMessage": "The user denied this from the InkGlance panel.",
-	"settings.approvals": "Answer permission requests on the reader",
+	"settings.approvals": "Answer permission requests and questions on the reader",
 	"approvals.off": "never",
 	"approvals.away": "when I'm away",
 	"approvals.always": "always",
@@ -111,5 +111,7 @@
 	"templates.default": "Yes, continue|Continue|Commit|Go back to the task",
 	"settings.repliesTitle": "Replies from the reader",
 	"settings.replies": "reply buttons on finished sessions",
-	"settings.replyWindowHours": "Keep replies open for"
+	"settings.replyWindowHours": "Keep replies open for",
+	"question.badge": "QUESTION",
+	"question.send": "Answer"
 }

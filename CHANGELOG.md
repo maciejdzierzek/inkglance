@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Claude's multiple-choice questions (AskUserQuestion) on the reader: options
+  as buttons, the answer fills the tool's `answers` field - no dialog, a normal
+  answer for Claude. Same "when away" rule as permission requests.
+
 - Claude Code plugin in the repository: hooks without editing settings, plus
   `/inkglance:setup` (guided install and pairing) and `/inkglance:doctor`.
 - `npm run config` to read and change settings from the terminal.

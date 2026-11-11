@@ -111,3 +111,11 @@ html.flash { filter: invert(1); background: #000; }
 .reply { margin-top: 0.35em; display: flex; flex-wrap: wrap; gap: 0.25em; align-items: center; }
 .reply-label { width: 100%; font-size: 0.72em; font-weight: bold; }
 .chip { font: inherit; font-size: 0.8em; padding: 0.35em 0.55em; border: 2px solid #000; background: #fff; color: #000; cursor: pointer; }
+
+/* Claude's questions: options as big buttons with their description. */
+.question { margin-top: 0.4em; }
+.q-text { font-weight: bold; font-size: 0.95em; margin-bottom: 0.25em; }
+.options { display: flex; flex-direction: column; gap: 0.3em; }
+.option span { display: block; text-align: left; }
+.option small { display: block; font-size: 0.75em; color: #333; font-weight: normal; margin-top: 0.1em; }
+.option input:checked + span small { color: #ddd; }

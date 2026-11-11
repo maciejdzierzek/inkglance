@@ -127,6 +127,24 @@ async function handle(req, res) {
 			if (!outcome.reply) return send(res, 204, '');
 			return send(res, 200, wakeText(outcome.reply), { 'Content-Type': 'text/plain; charset=utf-8' });
 		}
+		if (url.pathname === '/hook/question') {
+			let heldId = null;
+			res.on('close', () => {
+				if (heldId && !res.writableEnded) approvals.drop(heldId);
+			});
+			const outcome = await approvals.request(input, { kind: 'question', onHold: (id) => (heldId = id) });
+			if (outcome.decision !== 'answer') return send(res, 204, '');
+			// Filling the tool's own "answers" field: Claude gets a normal answer and
+			// the dialog on the computer is skipped.
+			const body = {
+				hookSpecificOutput: {
+					hookEventName: 'PreToolUse',
+					permissionDecision: 'allow',
+					updatedInput: { ...(input.tool_input || {}), answers: outcome.answers },
+				},
+			};
+			return send(res, 200, JSON.stringify(body), { 'Content-Type': 'application/json' });
+		}
 		if (url.pathname !== '/hook/permission') return send(res, 404, '');
 		let heldId = null;
 		res.on('close', () => {
@@ -203,6 +221,25 @@ async function handle(req, res) {
 		if (action === 'allow') approvals.decide(id, 'allow');
 		else if (action === 'deny') approvals.decide(id, 'deny', t(config.language, 'approval.deniedMessage'));
 		else approvals.release(id);
+		const qs = viaCookie ? '' : `?t=${config.token}`;
+		return send(res, 303, '', { Location: `/${qs}` });
+	}
+
+	// Answer to one of Claude's questions, from the reader.
+	if (url.pathname === '/answer' && req.method === 'POST') {
+		const form = new URLSearchParams(await readBody(req));
+		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+		const id = form.get('id');
+		const held = approvals.get(id);
+		if (held && form.get('action') === 'release') approvals.release(id);
+		else if (held) {
+			const answers = {};
+			held.questions.forEach((q, i) => {
+				const picked = form.getAll(`q${i}`).filter((v) => q.options.some((o) => o.label === v));
+				if (picked.length) answers[q.question] = picked.join(', ');
+			});
+			if (Object.keys(answers).length) approvals.answer(id, answers);
+		}
 		const qs = viaCookie ? '' : `?t=${config.token}`;
 		return send(res, 303, '', { Location: `/${qs}` });
 	}

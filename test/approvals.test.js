@@ -59,3 +59,15 @@ test('a duplicate request joins the waiting one', async () => {
 	assert.equal((await first).decision, 'allow');
 	assert.equal((await second).decision, 'allow');
 });
+
+test('questions: kept for the reader, answered with labels', async () => {
+	const { a } = make({ ...base, approvals: 'always' }, 0);
+	const q = { session_id: 's1', cwd: '/w', tool_name: 'AskUserQuestion', tool_input: { questions: [{ question: 'Color?', header: 'C', multiSelect: false, options: [{ label: 'Red' }, { label: 'Blue', description: 'calm' }] }] } };
+	let id;
+	const p = a.request(q, { kind: 'question', onHold: (x) => (id = x) });
+	await new Promise((r) => setTimeout(r, 10));
+	assert.equal(a.list()[0].kind, 'question');
+	assert.equal(a.list()[0].questions[0].options[1].description, 'calm');
+	a.answer(id, { 'Color?': 'Blue' });
+	assert.deepEqual(await p, { decision: 'answer', answers: { 'Color?': 'Blue' } });
+});

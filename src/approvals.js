@@ -1,4 +1,4 @@
-// Permission requests answered from the reader.
+// Permission requests and Claude's multiple-choice questions answered from the reader.
 //
 // Claude Code runs our PermissionRequest hook (src/hook.sh) before it shows its
 // own permission dialog, and shows the dialog only after the hook exits. So
@@ -33,6 +33,21 @@ export function idleSeconds() {
 	});
 }
 
+// Questions from Claude's AskUserQuestion tool, reduced to what the reader shows.
+export function questionsOf(input) {
+	const qs = input?.tool_input?.questions;
+	if (!Array.isArray(qs)) return [];
+	return qs.slice(0, 4).map((q) => ({
+		question: String(q.question || ''),
+		header: String(q.header || ''),
+		multiSelect: !!q.multiSelect,
+		options: (Array.isArray(q.options) ? q.options : []).slice(0, 6).map((o) => ({
+			label: String(o.label || ''),
+			description: String(o.description || ''),
+		})),
+	}));
+}
+
 // Short human summary of what is being asked.
 export function summarize(input) {
 	const tool = input?.tool_name || 'tool';
@@ -60,7 +75,7 @@ export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }
 
 	// Decides whether to hold. Resolves with { decision: 'allow'|'deny', message }
 	// or { decision: null } (fall through to the dialog on the computer).
-	async function request(input, { onHold } = {}) {
+	async function request(input, { onHold, kind = 'permission' } = {}) {
 		const c = getConfig();
 		if (c.approvals === 'off') return { decision: null, reason: 'off' };
 		if (c.approvals === 'away') {
@@ -69,13 +84,25 @@ export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }
 		}
 		// The same request may arrive twice (hooks from the plugin and from
 		// settings.json): join the one already waiting instead of showing two cards.
-		const key = `${input?.session_id || ''}|${input?.tool_name || ''}|${JSON.stringify(input?.tool_input || {})}`;
+		const key = `${kind}|${input?.session_id || ''}|${input?.tool_name || ''}|${JSON.stringify(input?.tool_input || {})}`;
 		const twin = [...pending.values()].find((p) => p.key === key);
 		if (twin) return new Promise((resolve) => twin.followers.push(resolve));
 		const id = randomUUID();
 		const { tool, detail } = summarize(input);
 		return new Promise((resolve) => {
-			const p = { id, key, followers: [], sessionId: input?.session_id || '', cwd: input?.cwd || '', tool, detail, createdAt: Date.now(), resolve };
+			const p = {
+				id,
+				key,
+				kind,
+				questions: kind === 'question' ? questionsOf(input) : [],
+				followers: [],
+				sessionId: input?.session_id || '',
+				cwd: input?.cwd || '',
+				tool,
+				detail,
+				createdAt: Date.now(),
+				resolve,
+			};
 			p.timer = setTimeout(() => finish(id, { decision: null, reason: 'timeout' }), c.approvalTimeoutMinutes * 60 * 1000);
 			if (c.approvals === 'away') {
 				p.watch = setInterval(async () => {
@@ -93,9 +120,22 @@ export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }
 	return {
 		request,
 		decide: (id, decision, message) => finish(id, { decision, message }),
+		// Answers to an AskUserQuestion: { "<question text>": "<label>[, <label>]" }.
+		answer: (id, answers) => finish(id, { decision: 'answer', answers }),
+		get: (id) => pending.get(id),
 		release: (id) => finish(id, { decision: null, reason: 'released on reader' }),
 		// Called when the hook's HTTP connection closes early (session cancelled).
 		drop: (id) => finish(id, { decision: null, reason: 'connection closed' }),
-		list: () => [...pending.values()].map(({ id, sessionId, cwd, tool, detail, createdAt }) => ({ id, sessionId, cwd, tool, detail, createdAt })),
+		list: () =>
+			[...pending.values()].map(({ id, kind, questions, sessionId, cwd, tool, detail, createdAt }) => ({
+				id,
+				kind,
+				questions,
+				sessionId,
+				cwd,
+				tool,
+				detail,
+				createdAt,
+			})),
 	};
 }

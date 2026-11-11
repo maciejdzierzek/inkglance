@@ -82,6 +82,11 @@ function liveScript(ctx, { live }) {
 			});
 	}
 	setInterval(refresh, every);
+	// One single-choice question: a tap on an option is the answer.
+	document.addEventListener('change', function (e) {
+		var form = e.target.closest && e.target.closest('form.answer-single');
+		if (form && e.target.type === 'radio') form.submit();
+	});
 	// Quick poll: refresh as soon as anything changes; flash the screen when a
 	// session starts waiting (inverting colors is very visible on e-ink).
 	var stateUrl = ${JSON.stringify(stateUrl)}, known = null, lastV = null;
@@ -261,14 +266,38 @@ function approvalsBlock(ctx, list, sessions) {
 			const s = byId.get(a.sessionId);
 			const title = s?.details?.title || s?.name || a.cwd.split('/').pop() || '';
 			const project = s?.project || a.cwd.split('/').pop() || '';
+			const head = (badge) =>
+				`<div class="card-head"><span class="badge badge-needsYou">${esc(badge)}</span><span class="sub">${esc(project)} · ${esc(relativeTime(lang, a.createdAt, ctx.now))}</span></div>
+<div class="title">${esc(title)}</div>`;
+			const hidden = `<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="id" value="${esc(a.id)}">`;
+			if (a.kind === 'question') {
+				const single = a.questions.length === 1 && !a.questions[0].multiSelect;
+				const blocks = a.questions
+					.map((q, i) => {
+						const type = q.multiSelect ? 'checkbox' : 'radio';
+						const opts = q.options
+							.map(
+								(o) =>
+									`<label class="choice option"><input type="${type}" name="q${i}" value="${esc(o.label)}"><span><b>${esc(o.label)}</b>${o.description ? `<small>${esc(o.description)}</small>` : ''}</span></label>`,
+							)
+							.join('');
+						return `<div class="question"><div class="q-text">${esc(q.question)}</div><div class="options">${opts}</div></div>`;
+					})
+					.join('');
+				return `<div class="card card-needsYou approval">
+${head(t(lang, 'question.badge'))}
+<form method="post" action="${esc(href('/answer'))}" class="answer${single ? ' answer-single' : ''}">${hidden}
+${blocks}
+<div class="approval-actions">${single ? '' : `<button type="submit" class="button btn-allow">${esc(t(lang, 'question.send'))}</button>`}<button type="submit" name="action" value="release" class="button btn-release">${esc(t(lang, 'approval.release'))}</button></div>
+</form>
+</div>`;
+			}
 			const button = (action, cls) =>
 				`<button type="submit" name="action" value="${action}" class="button ${cls}">${esc(t(lang, 'approval.' + action))}</button>`;
 			return `<div class="card card-needsYou approval">
-<div class="card-head"><span class="badge badge-needsYou">${esc(t(lang, 'approval.badge'))}</span><span class="sub">${esc(project)} · ${esc(relativeTime(lang, a.createdAt, ctx.now))}</span></div>
-<div class="title">${esc(title)}</div>
+${head(t(lang, 'approval.badge'))}
 <div class="ask"><b>${esc(a.tool)}</b>${a.detail ? `<code>${esc(a.detail)}</code>` : ''}</div>
-<form method="post" action="${esc(href('/approve'))}" class="approval-actions">
-<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="id" value="${esc(a.id)}">
+<form method="post" action="${esc(href('/approve'))}" class="approval-actions">${hidden}
 ${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 'btn-release')}
 </form>
 </div>`;

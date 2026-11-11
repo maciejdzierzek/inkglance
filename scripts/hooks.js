@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Installs the InkGlance hooks (PermissionRequest, Stop, UserPromptSubmit) into Claude Code's user settings
+// Installs the InkGlance hooks (PermissionRequest, PreToolUse for questions, Stop, UserPromptSubmit) into Claude Code's user settings
 // (~/.claude/settings.json), next to any hooks you already have.
 //
 //   node scripts/hooks.js install     # backup + add (or update) the hook
@@ -20,7 +20,8 @@ const HOOK = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'hook.sh
 // Event -> hook settings. Timeouts are longer than the longest wait the panel
 // allows (approvalTimeoutMinutes <= 14, replyWindowHours <= 24).
 const HOOKS = {
-	PermissionRequest: { arg: 'permission', timeout: 900 },
+	PermissionRequest: { arg: 'permission', timeout: 900, matcher: '*' },
+	PreToolUse: { arg: 'question', timeout: 900, matcher: 'AskUserQuestion' },
 	Stop: { arg: 'stop', timeout: 24 * 3600 + 120, asyncRewake: true },
 	UserPromptSubmit: { arg: 'prompt', timeout: 5 },
 };
@@ -65,7 +66,7 @@ if (cmd === 'install') {
 		const entry = { type: 'command', command: `sh "${HOOK}" ${h.arg} ${MARKER}`, timeout: h.timeout };
 		if (h.asyncRewake) entry.asyncRewake = true;
 		settings.hooks[event] = settings.hooks[event] || [];
-		settings.hooks[event].push(event === 'PermissionRequest' ? { matcher: '*', hooks: [entry] } : { hooks: [entry] });
+		settings.hooks[event].push(h.matcher ? { matcher: h.matcher, hooks: [entry] } : { hooks: [entry] });
 	}
 	save(settings);
 	console.log(`Installed InkGlance hooks (${Object.keys(HOOKS).join(', ')}) in ${SETTINGS}`);

@@ -1,20 +1,51 @@
 {
-	"description": "InkGlance: answer permission requests and reply to finished sessions from an e-ink reader. Each hook exits at once when the panel is not running.",
+	"description": "InkGlance: answer permission requests and Claude's questions, and reply to finished sessions, from an e-ink reader. Each hook exits at once when the panel is not running.",
 	"hooks": {
 		"PermissionRequest": [
 			{
 				"matcher": "*",
-				"hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" permission", "timeout": 900 }]
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" permission",
+						"timeout": 900
+					}
+				]
 			}
 		],
 		"Stop": [
 			{
-				"hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" stop", "timeout": 86520, "asyncRewake": true }]
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" stop",
+						"timeout": 86520,
+						"asyncRewake": true
+					}
+				]
 			}
 		],
 		"UserPromptSubmit": [
 			{
-				"hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" prompt", "timeout": 5 }]
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" prompt",
+						"timeout": 5
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "AskUserQuestion",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"${CLAUDE_PLUGIN_ROOT}/src/hook.sh\" question",
+						"timeout": 900
+					}
+				]
 			}
 		]
 	}
