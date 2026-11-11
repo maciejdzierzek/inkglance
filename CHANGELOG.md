@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Windows and Linux (preview): notifications, sounds and idle detection go
+  through `src/platform.js` with per-platform commands; hooks have a portable
+  Node version (`src/hook.js`) used on Windows; the tray app uses the colour
+  icon outside macOS. CI builds the app for macOS and Windows.
+
 - Menu-bar app for macOS (Tauri 2, `npm run tray:install`): waiting count next
   to the icon, status, reader address, panel / settings / limits windows,
   restart, log, open at login, quit. Owns the server (bundled copy).

@@ -132,6 +132,7 @@ fn find_node() -> Option<PathBuf> {
     // Apps started from Finder get a minimal PATH; ask the user's login shell.
     for shell in ["/bin/zsh", "/bin/bash"] {
         if let Ok(out) = Command::new(shell).args(["-ilc", "command -v node"]).stderr(Stdio::null()).output() {
+            // (never reached on Windows: returned above)
             if let Some(line) = String::from_utf8_lossy(&out.stdout).lines().rev().find(|l| l.trim().starts_with('/')) {
                 return Some(PathBuf::from(line.trim()));
             }
@@ -164,7 +165,10 @@ fn start_server(app: &AppHandle) {
             cmd.stdout(f).stderr(f2);
         }
     }
-    // Claude Code's `claude` binary must be on PATH for the server, as in a terminal.
+    // Claude Code's `claude` binary must be on PATH for the server, as in a
+    // terminal. Apps started from Finder get a minimal PATH, so ask the login
+    // shell. (Windows apps inherit the user's full PATH.)
+    #[cfg(not(windows))]
     if let Ok(out) = Command::new("/bin/zsh").args(["-ilc", "echo $PATH"]).stderr(Stdio::null()).output() {
         if let Some(path) = String::from_utf8_lossy(&out.stdout).lines().last() {
             if path.contains('/') {
@@ -260,9 +264,16 @@ fn main() {
                 &[&status, &reader, &sep()?, &open, &settings, &limits, &sep()?, &restart, &logs, &autostart, &sep()?, &quit],
             )?;
 
+            // macOS: a monochrome template icon that follows the menu bar's colour.
+            // Windows / Linux: the colour icon (a black glyph vanishes on a dark taskbar).
+            #[cfg(target_os = "macos")]
+            let icon = Image::from_bytes(include_bytes!("../../../assets/tray/iconTemplate@2x.png"))?;
+            #[cfg(not(target_os = "macos"))]
+            let icon = Image::from_bytes(include_bytes!("../icons/32x32.png"))?;
+
             TrayIconBuilder::with_id(TRAY_ID)
-                .icon(Image::from_bytes(include_bytes!("../../../assets/tray/iconTemplate@2x.png"))?)
-                .icon_as_template(true)
+                .icon(icon)
+                .icon_as_template(cfg!(target_os = "macos"))
                 .tooltip("InkGlance")
                 .menu(&menu)
                 .show_menu_on_left_click(true)

@@ -22,13 +22,13 @@ test('watcher reports entering "waiting" and finishing a turn, not the first loo
 
 test('alerts: one sound per batch, respect kinds and quiet hours', () => {
 	const calls = [];
-	const run = (cmd) => calls.push(cmd);
+	const sound = () => calls.push('sound');
 	const base = { alertOn: ['needsYou'], macSound: true, macSoundName: 'Glass', macNotification: false, quietHours: 'off' };
 	const ev = (kind) => ({ kind, session: { id: 'x', project: 'p' } });
 	let config = base;
-	const alerts = createAlerts({ getConfig: () => config, label: (k) => k, log: () => {}, run, now: () => at(12) });
+	const alerts = createAlerts({ getConfig: () => config, label: (k) => k, log: () => {}, sound, notify: () => calls.push('notify'), now: () => at(12) });
 	alerts([ev('needsYou'), ev('needsYou'), ev('finished')]);
-	if (process.platform === 'darwin') assert.deepEqual(calls, ['afplay']);
+	assert.deepEqual(calls, ['sound']);
 	calls.length = 0;
 	alerts([ev('finished')]);
 	assert.deepEqual(calls, []);

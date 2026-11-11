@@ -7,8 +7,7 @@
 // guessing is visible to the owner.
 
 import { randomInt } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { platform } from 'node:process';
+import { notify } from './platform.js';
 
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
@@ -40,16 +39,11 @@ export function createPairing({ notify = systemNotify, now = () => Date.now() } 
 	};
 }
 
-// macOS notification via AppleScript; elsewhere the code is only in the terminal.
+// System notification (macOS, Windows, Linux) plus the terminal / log.
 export function makeSystemNotify({ title, body, log }) {
 	return (code) => {
 		log(`PAIRING CODE: ${code}`);
-		if (platform !== 'darwin') return;
-		const text = body.replace('{code}', code).replace(/"/g, '');
-		const script = `display notification "${text}" with title "${title.replace(/"/g, '')}" sound name "Glass"`;
-		execFile('osascript', ['-e', script], (err) => {
-			if (err) log(`notification failed: ${err.message}`);
-		});
+		notify(title, body.replace('{code}', code), { sound: 'Glass' });
 	};
 }
 

@@ -22,7 +22,8 @@ export function transcriptPath(cwd, sessionId, home = homedir()) {
 
 function runAgentsJson(claudeBin) {
 	return new Promise((resolve, reject) => {
-		execFile(claudeBin, ['agents', '--json'], { timeout: 15000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+		// On Windows `claude` may be a .cmd shim, which only runs through a shell.
+		execFile(claudeBin, ['agents', '--json'], { timeout: 15000, maxBuffer: 8 * 1024 * 1024, shell: process.platform === 'win32', windowsHide: true }, (err, stdout) => {
 			if (err) return reject(err);
 			try {
 				const data = JSON.parse(stdout);

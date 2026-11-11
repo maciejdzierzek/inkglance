@@ -16,7 +16,13 @@ import { fileURLToPath } from 'node:url';
 const SETTINGS = process.env.CLAUDE_SETTINGS || join(homedir(), '.claude', 'settings.json');
 const MARKER = '# [inkglance]';
 const LEGACY_MARKERS = ['# [inkai]']; // entries from before the rename, removed on install/uninstall
-const HOOK = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'hook.sh');
+const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
+// macOS / Linux: a curl shell script (a few MB per waiting hook). Windows has no
+// `sh`, so it gets the portable Node version.
+const hookCommand = (arg) =>
+	process.platform === 'win32'
+		? `"${process.execPath}" "${join(SRC, 'hook.js')}" ${arg} ${MARKER}`
+		: `sh "${join(SRC, 'hook.sh')}" ${arg} ${MARKER}`;
 // Event -> hook settings. Timeouts are longer than the longest wait the panel
 // allows (approvalTimeoutMinutes <= 14, replyWindowHours <= 24).
 const HOOKS = {
@@ -63,7 +69,7 @@ if (cmd === 'install') {
 	strip(settings);
 	settings.hooks = settings.hooks || {};
 	for (const [event, h] of Object.entries(HOOKS)) {
-		const entry = { type: 'command', command: `sh "${HOOK}" ${h.arg} ${MARKER}`, timeout: h.timeout };
+		const entry = { type: 'command', command: hookCommand(h.arg), timeout: h.timeout };
 		if (h.asyncRewake) entry.asyncRewake = true;
 		settings.hooks[event] = settings.hooks[event] || [];
 		settings.hooks[event].push(h.matcher ? { matcher: h.matcher, hooks: [entry] } : { hooks: [entry] });

@@ -1,10 +1,11 @@
-// Alerts on the computer: a system sound and, optionally, a notification.
+// Alerts on the computer (macOS, Windows, Linux - see platform.js): a system
+// sound and, optionally, a notification.
 // The reader's own alert (a screen flash) is decided in the browser.
 
-import { execFile } from 'node:child_process';
-import { platform } from 'node:process';
+import { SOUNDS, playSound as platformSound, notify as platformNotify } from './platform.js';
 
-export const MAC_SOUNDS = ['Glass', 'Ping', 'Submarine', 'Hero'];
+// Kept under its old name: config keys and the settings screen use it.
+export const MAC_SOUNDS = SOUNDS;
 export const QUIET_PRESETS = ['off', '21-8', '22-7', '23-7'];
 
 // "22-7" = from 22:00 to 07:00 (over midnight); "off" = never quiet.
@@ -17,18 +18,10 @@ export function inQuietHours(spec, date = new Date()) {
 	return from < to ? h >= from && h < to : h >= from || h < to;
 }
 
-export function playSound(name, run = execFile) {
-	if (platform !== 'darwin' || !MAC_SOUNDS.includes(name)) return;
-	run('afplay', [`/System/Library/Sounds/${name}.aiff`], () => {});
-}
+export const playSound = (name) => platformSound(name);
 
-function notify(title, text, run) {
-	if (platform !== 'darwin') return;
-	const clean = (s) => String(s).replace(/["\\]/g, '');
-	run('osascript', ['-e', `display notification "${clean(text)}" with title "${clean(title)}"`], () => {});
-}
-
-export function createAlerts({ getConfig, label, log, run = execFile, now = () => new Date() }) {
+// `sound` and `notify` are injectable for tests.
+export function createAlerts({ getConfig, label, log, sound = platformSound, notify = platformNotify, now = () => new Date() }) {
 	return (events) => {
 		const c = getConfig();
 		const wanted = events.filter((e) => c.alertOn.includes(e.kind));
@@ -40,11 +33,11 @@ export function createAlerts({ getConfig, label, log, run = execFile, now = () =
 		}
 		if (quiet) return;
 		// One sound per batch, however many sessions changed at once.
-		if (c.macSound) playSound(c.macSoundName, run);
+		if (c.macSound) sound(c.macSoundName);
 		if (c.macNotification) {
 			for (const e of wanted) {
 				const s = e.session;
-				notify(label(e.kind), `${s.details?.title || s.name || s.project} · ${s.project}`, run);
+				notify(label(e.kind), `${s.details?.title || s.name || s.project} · ${s.project}`);
 			}
 		}
 	};

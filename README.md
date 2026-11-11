@@ -135,7 +135,10 @@ Safety:
 
 ## Requirements
 
-- macOS (Linux works, minus notifications and the background service script)
+- macOS (tested). **Windows and Linux: preview** - built and unit-tested, not yet
+  run on a real machine: notifications (PowerShell toasts / `notify-send`),
+  sounds, idle detection (`GetLastInputInfo` / `xprintidle`) and the hooks
+  (a Node version on Windows, which has no `sh`) have platform variants.
 - **Node.js 20+**
 - **Claude Code** with the `claude agents` command
 
@@ -191,7 +194,7 @@ to it - and a menu: status, the address to open on the reader, *Open panel*,
 *Settings…*, *Limits…*, *Restart server*, *Show log*, *Open at login* and *Quit*.
 The app carries its own copy of the server and owns it: it starts the server,
 stops it on Quit, and replaces the background service below. Built with Tauri 2;
-Windows support is planned (see Roadmap).
+the Windows build is produced by CI (`.github/workflows/ci.yml`).
 
 ## Run it in the background without the app (macOS)
 
@@ -257,8 +260,7 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 2. Allow / deny permission requests, one-tap replies - **done**
 3. Usage charts - **done**
 4. Answer Claude's multiple-choice questions from the reader - **done**
-5. Menu-bar app for macOS - **done**; Windows next (notifications, idle
-   detection and hooks need Windows counterparts)
+5. Menu-bar app - **done** for macOS; Windows and Linux in preview
 6. Update checks and one-click updates
 7. Jump to the session's window on the computer
 

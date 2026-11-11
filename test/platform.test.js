@@ -1,0 +1,30 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { notifyCommand, soundCommand, idleCommand, parseIdle, idleCheckMs } from '../src/platform.js';
+
+test('notifications per platform, quotes made safe', () => {
+	const [mac, macArgs] = notifyCommand('darwin', 'Title "x"', 'It\'s done', { sound: 'Glass' });
+	assert.equal(mac, 'osascript');
+	assert.match(macArgs[1], /display notification "It's done" with title "Title x" sound name "Glass"/);
+	const [win, winArgs] = notifyCommand('win32', 'T', "It's");
+	assert.equal(win, 'powershell.exe');
+	assert.match(winArgs.at(-1), /CreateTextNode\('It''s'\)/);
+	assert.deepEqual(notifyCommand('linux', 'T', 'x'), ['notify-send', ['T', 'x']]);
+});
+
+test('sounds per platform, unknown names refused', () => {
+	assert.deepEqual(soundCommand('darwin', 'Ping'), ['afplay', ['/System/Library/Sounds/Ping.aiff']]);
+	assert.match(soundCommand('win32', 'Hero')[1].at(-1), /tada\.wav/);
+	assert.equal(soundCommand('linux', 'Glass')[0], 'paplay');
+	assert.equal(soundCommand('darwin', 'rm -rf'), null);
+});
+
+test('idle time per platform', () => {
+	assert.equal(idleCommand('darwin')[0], 'ioreg');
+	assert.match(idleCommand('win32')[1].at(-1), /GetLastInputInfo/);
+	assert.equal(idleCommand('linux')[0], 'xprintidle');
+	assert.equal(parseIdle('darwin', '"HIDIdleTime" = 2500000000'), 2.5);
+	assert.equal(parseIdle('win32', '1500\r\n'), 1.5);
+	assert.equal(parseIdle('linux', 'garbage'), null);
+	assert.equal(idleCheckMs('win32'), 5000);
+});
