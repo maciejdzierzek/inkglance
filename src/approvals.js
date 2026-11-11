@@ -12,7 +12,7 @@
 // to the normal dialog, so the panel can only add a way to answer, never remove one.
 
 import { randomUUID } from 'node:crypto';
-import { idleSeconds, idleCheckMs } from './platform.js';
+import { idleSeconds, idleSecondsFast, idleCheckMs } from './platform.js';
 
 export const APPROVAL_MODES = ['off', 'away', 'always'];
 export const AWAY_PRESETS = [30, 60, 120, 300];
@@ -46,7 +46,7 @@ export function summarize(input) {
 	return { tool, detail: text.length > 400 ? text.slice(0, 399) + '…' : text };
 }
 
-export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }) {
+export function createApprovals({ getConfig, log, onChange, idle = idleSecondsFast }) {
 	const pending = new Map(); // id -> { id, sessionId, cwd, tool, detail, createdAt, resolve, timer, watch }
 
 	function finish(id, outcome) {

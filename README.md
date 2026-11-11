@@ -2,6 +2,9 @@
 
 # InkGlance
 
+[![CI](https://github.com/maciejdzierzek/inkglance/actions/workflows/ci.yml/badge.svg)](https://github.com/maciejdzierzek/inkglance/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-black.svg)](LICENSE)
+
 A calm, always-on panel for your Claude Code sessions, made for an e-ink reader
 on your desk.
 
@@ -15,8 +18,9 @@ to install on the reader, no cable.
 Built and tested on a PocketBook Verse Pro Color (Kaleido 3 color e-ink), but it
 is plain HTML and works in any browser.
 
-<img src="docs/images/panel.png" width="400" alt="The panel on a 572×663 e-reader screen: a permission request, a question, two finished sessions, two working, one idle (made-up demo data)">
+<img src="docs/images/panel.png" width="400" alt="The panel on a 572×663 e-reader screen: four tiles, limits, a permission request and a question side by side, two finished sessions, two working, one idle (made-up demo data)">
 <img src="docs/images/settings.png" width="400" alt="Settings screen with tabs (made-up demo data)">
+<img src="docs/images/landscape.png" width="540" alt="The same panel with the reader turned sideways (made-up demo data)">
 
 <sub>Screenshots from the built-in demo (`npm run demo`) - made-up sessions, real layout, actual reader size.</sub>
 
@@ -25,23 +29,26 @@ is plain HTML and works in any browser.
 
 ## What it shows
 
-- **Waiting for you** at the top - permission prompts and Claude's questions,
-  answerable right on the reader.
-- **Done · your turn** - sessions whose turn just ended and wait for your next
-  message, with a bold band and a counter ("12 min ago"). The reader flashes,
-  the computer plays a sound and the menu-bar icon shows `✓2`: the nudge to
-  switch windows. *Later* puts one aside until its next turn ends.
-- **Working** and **Idle**, newest first. Idle sessions untouched for a long
-  time collapse into one line.
+- **Four tiles** at the top, readable from across the desk: waiting for you,
+  done (your turn), working, idle. A tile that wants you is filled red or
+  green.
+- **One board of cards**, most urgent first, packed into columns without gaps.
+  Every card has a state band with an icon and the time:
+  - **Waiting** (red): permission prompts and Claude's questions, answerable
+    right on the reader - *Allow* / *Deny*, or tap an option.
+  - **Done · your turn** (green): the session's turn ended and it waits for
+    your next message. A big counter ("12 min ago"), one-tap replies, and
+    *Later* to put it aside until its next turn ends. The reader flashes, the
+    computer plays a sound, the menu-bar icon shows `✓2` - the nudge to switch
+    windows.
+  - **Working** (blue): current tool and last prompt.
+  - **Idle**: two quiet lines; long-forgotten sessions collapse into one.
 - **Per session** (you choose which): title, where it runs (Terminal, VS Code,
   Claude app), what it waits for, current tool, last prompt, model and effort,
-  context size, output tokens, git branch, last activity, folder.
-- **Plan limits**: 5-hour and weekly usage, reset time and a forecast at the
-  current pace ("runs out ~21:10"), plus a **limits screen** with charts.
-- **Answer from the reader**: *Allow* / *Deny* permission requests, tap an
-  option of Claude's multiple-choice questions, or send a one-tap reply
-  ("Yes, continue", "Commit", your own) to a finished session - in parallel
-  with the computer, never instead of it.
+  context size, output tokens, git branch, folder.
+- **Plan limits** on one row: 5-hour and weekly usage, forecast at the current
+  pace ("runs out ~Sat 05:18") and reset; tap for the **limits screen** with
+  charts.
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
   English and Polish. Every setting is a big button - nothing to type on e-ink.
 
@@ -234,7 +241,7 @@ binary path and token can also be changed on the panel's **Settings** screen.
 | `refreshSeconds` | `60` | Full refresh interval (15-3600). Changes show sooner: the reader checks every 10 s |
 | `columns` | `2` | `1`, `2`, `3` |
 | `orientation` | `auto` | `auto` follows the browser; `left` / `right` draw the page sideways |
-| `cardFields` | most | `where`, `waitingFor`, `activity`, `lastPrompt`, `model`, `context`, `tokens`, `branch`, `times`, `path` |
+| `cardFields` | most | `where`, `waitingFor`, `activity`, `lastPrompt`, `model`, `context`, `tokens`, `branch`, `times` (time in the band), `path` |
 | `finishedHours` | `4` | How long a finished turn stays in "your turn" before the session counts as idle (0 = off) |
 | `hideIdleAfterHours` | `24` | Collapse idle sessions older than this (0 = never) |
 | `fontScale` | `1` | `0.875` to `1.5` |
@@ -324,6 +331,23 @@ sessions, so the panel is guarded in layers:
 
 See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
+## FAQ
+
+- **Does it work with Kindle, Kobo or Boox?** Anything with a reasonably modern
+  browser should; it is tested on a PocketBook. Reports welcome
+  ([e-reader report](../../issues/new?template=reader.yml)).
+- **Does it ever approve something by itself?** No. Every approval is a tap on
+  a paired device; if the panel is off, Claude Code behaves as if InkGlance did
+  not exist.
+- **Do I need a Pro or Max plan?** No. Sessions, "your turn", replies and
+  approvals work with any Claude Code login; plan limits need a subscription
+  that has them.
+- **Does it work over the internet?** Not by design. Over a VPN such as
+  Tailscale it works like at home (add the name to `allowedHosts` if you use
+  one).
+- **Does it slow Claude Code down?** No: hooks wait in the background and give
+  up in about a second when the panel does not answer.
+
 ## Troubleshooting
 
 - **The reader cannot open the page** - check both are on the same network; type
@@ -374,6 +398,7 @@ git config core.hooksPath .githooks   # once per clone
 ```
 
 Zero runtime dependencies. Screenshots and examples use made-up data only.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

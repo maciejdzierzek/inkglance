@@ -13,7 +13,7 @@
 // The token is only ever sent to api.anthropic.com and never logged.
 
 import { execFile } from 'node:child_process';
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { readFile, readdir, stat, unlink } from 'node:fs/promises';
 import { homedir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { platform } from 'node:process';
@@ -89,10 +89,24 @@ export function parseStatusline(snapshot) {
 	return { source: 'statusline', observedAt: snapshot.receivedAt || 0, fiveHour: pct(r.five_hour), sevenDay: pct(r.seven_day) };
 }
 
+// Snapshots older than this are deleted (one file per session ever seen).
+const SNAPSHOT_KEEP_MS = 7 * 24 * 3600 * 1000;
+
 async function fromStatusline() {
-	const names = await readdir(SNAPSHOT_DIR).catch(() => []);
+	const names = (await readdir(SNAPSHOT_DIR).catch(() => [])).filter((n) => n.endsWith('.json'));
+	const now = Date.now();
+	const fresh = [];
+	for (const name of names) {
+		const path = join(SNAPSHOT_DIR, name);
+		const s = await stat(path).catch(() => null);
+		if (!s) continue;
+		if (now - s.mtimeMs > SNAPSHOT_KEEP_MS) await unlink(path).catch(() => {});
+		else fresh.push({ name, mtime: s.mtimeMs });
+	}
+	// The newest few are enough: limits are per account, any session reports them.
+	fresh.sort((a, b) => b.mtime - a.mtime);
 	let best = null;
-	for (const name of names.filter((n) => n.endsWith('.json'))) {
+	for (const { name } of fresh.slice(0, 5)) {
 		try {
 			const parsed = parseStatusline(JSON.parse(await readFile(join(SNAPSHOT_DIR, name), 'utf8')));
 			if (parsed && (!best || parsed.observedAt > best.observedAt)) best = parsed;

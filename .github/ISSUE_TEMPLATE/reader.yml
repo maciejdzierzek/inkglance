@@ -1,0 +1,30 @@
+name: E-reader report
+description: Tell us how InkGlance works on your reader - it helps others choose
+labels: [e-reader]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Reader model
+      placeholder: Kobo Libra Colour / Kindle Paperwhite / Boox Go 7
+    validations:
+      required: true
+  - type: input
+    id: diag
+    attributes:
+      label: DIAG line from the footer
+      placeholder: "JS ok · 600×800 · dpr 2 · Mozilla/5.0 ..."
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: Pairing with the keypad
+        - label: Automatic refresh
+        - label: Fullscreen
+        - label: Tapping buttons (approve, reply, settings)
+        - label: Colors
+  - type: textarea
+    id: notes
+    attributes:
+      label: Settings that helped, problems, photos (no private data)

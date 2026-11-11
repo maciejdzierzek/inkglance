@@ -68,6 +68,25 @@ function liveScript(ctx, { live }) {
 	}
 	diag();
 	document.addEventListener('fullscreenchange', diag);
+	// Deal cards into columns, each to the shortest column so far: priority order
+	// is kept (first card top left, second top right) and no card leaves a hole.
+	function deal() {
+		var b = document.querySelector('.board');
+		var n = b ? Number(b.getAttribute('data-cols')) || 1 : 1;
+		if (!b || n < 2 || b.className.indexOf('dealt') >= 0) return;
+		var cards = [].slice.call(b.children);
+		var heights = cards.map(function (c) { return c.offsetHeight; });
+		var cols = [], sums = [];
+		for (var i = 0; i < n; i++) { cols.push(document.createElement('div')); cols[i].className = 'col'; sums.push(0); }
+		cards.forEach(function (c, k) {
+			var j = sums.indexOf(Math.min.apply(null, sums));
+			cols[j].appendChild(c);
+			sums[j] += heights[k] + 8;
+		});
+		cols.forEach(function (col) { b.appendChild(col); });
+		b.className += ' dealt';
+	}
+	deal();
 	${
 		live
 			? `var every = ${config.refreshSeconds * 1000};
@@ -77,7 +96,7 @@ function liveScript(ctx, { live }) {
 			.then(function (html) {
 				var next = new DOMParser().parseFromString(html, 'text/html').getElementById('app');
 				var app = document.getElementById('app');
-				if (next && app) { app.replaceWith(next); diag(); }
+				if (next && app) { app.replaceWith(next); deal(); diag(); }
 			})
 			.catch(function () {
 				var off = document.getElementById('offline');
@@ -129,7 +148,7 @@ function liveScript(ctx, { live }) {
 </script>`;
 }
 
-function layout(ctx, { title, active, summary, body, live }) {
+function layout(ctx, { title, active, summary, body, live, usage }) {
 	const { config } = ctx;
 	const lang = config.language;
 	const href = makeHref(ctx);
@@ -141,7 +160,7 @@ function layout(ctx, { title, active, summary, body, live }) {
 			? `<a class="update-badge" href="${esc(href('/settings', { tab: 'about' }))}">${esc(t(lang, 'about.badge', { version: ctx.update.latest.version }))}</a>`
 			: '';
 	const limitsButton =
-		active === 'sessions' ? `<a class="icon" href="${esc(href('/limits'))}" title="${esc(t(lang, 'nav.limits'))}">${ICONS.limits}</a>` : '';
+		active === 'sessions' && !config.showLimits ? `<a class="icon" href="${esc(href('/limits'))}" title="${esc(t(lang, 'nav.limits'))}">${ICONS.limits}</a>` : '';
 	const right =
 		active === 'settings' || active === 'limits'
 			? `<a class="icon" href="${esc(href('/'))}" title="${esc(t(lang, 'nav.back'))}">${ICONS.back}<span>${esc(t(lang, 'nav.back'))}</span></a>`
@@ -149,6 +168,7 @@ function layout(ctx, { title, active, summary, body, live }) {
 	const footer = [
 		esc(t(lang, 'footer.rendered', { time: clockTime(lang, ctx.now) })),
 		live ? esc(t(lang, 'footer.refresh', { seconds: config.refreshSeconds })) : '',
+		usage?.observedAt ? esc(t(lang, 'limits.age', { when: relativeTime(lang, usage.observedAt, ctx.now) })) : '',
 	]
 		.filter(Boolean)
 		.join(' · ');
@@ -184,47 +204,74 @@ ${liveScript(ctx, { live })}
 </html>`;
 }
 
+// Small line icons (24x24, currentColor): states, places, numbers.
+const svg = (body, size = 18) =>
+	`<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const GLYPHS = {
+	needsYou: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.01"/>',
+	permission: '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+	question: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17v.01"/>',
+	finished: '<circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-6.5"/>',
+	working: '<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5.5 3.5-5.5 3.5z" fill="currentColor"/>',
+	idle: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+	cli: '<path d="m5 8 4 4-4 4M12 17h7"/>',
+	'claude-vscode': '<path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>',
+	'claude-desktop': '<rect x="3" y="4" width="18" height="15" rx="1"/><path d="M3 8h18"/>',
+	context: '<path d="M4 7l8-4 8 4-8 4z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/>',
+	output: '<path d="M12 20V5M6 11l6-6 6 6"/>',
+	model: '<rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+	branch: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-12 7"/>',
+};
+const icon = (name, size) => (GLYPHS[name] ? svg(GLYPHS[name], size) : '');
+
+// Numbers the same way in every language: 84k, 1.2M.
+const short = (n) => new Intl.NumberFormat('en', { notation: 'compact', maximumSignificantDigits: 3 }).format(n).toLowerCase();
+
+// One card shape for everything: a state band (icon, label, time), the title,
+// where it runs, then what the user chose to see. Idle sessions are two lines.
 function card(ctx, s) {
 	const lang = ctx.config.language;
 	const fields = new Set(ctx.config.cardFields);
 	const d = s.details || {};
 	const title = d.title || s.name || s.project;
+	const whereLabel = d.entrypoint ? (t(lang, 'where.' + d.entrypoint).startsWith('where.') ? d.entrypoint : t(lang, 'where.' + d.entrypoint)) : '';
 	const sub = [s.project];
+	if (fields.has('where') && whereLabel) sub.push(whereLabel);
 	if (fields.has('branch') && d.branch) sub.push(d.branch);
-	if (fields.has('where') && d.entrypoint) {
-		const label = t(lang, 'where.' + d.entrypoint);
-		sub.push(label.startsWith('where.') ? d.entrypoint : label); // unknown entrypoints shown as-is
+	const subLine = `<div class="sub">${fields.has('where') && d.entrypoint ? icon(d.entrypoint, 14) : ''}${esc(sub.join(' · '))}</div>`;
+
+	if (s.group === 'idle') {
+		const when = elapsed(lang, s.lastActivity, ctx.now);
+		return `<article class="card st-idle">
+<div class="idle-head">${icon('idle', 16)}<span class="title1">${esc(title)}</span></div>
+<div class="sub">${esc(sub.join(' · '))}${when ? ` · ${esc(when)}` : ''}</div>
+</article>`;
 	}
 
 	const rows = [];
 	if (fields.has('waitingFor') && s.waitingFor) rows.push(`<div class="waiting">${esc(s.waitingFor)}</div>`);
-	if (fields.has('activity') && s.group === 'working' && d.currentTool) rows.push(`<div class="activity">▸ ${esc(d.currentTool)}</div>`);
-	if (fields.has('lastPrompt') && d.lastPrompt) rows.push(`<div class="prompt">„${esc(d.lastPrompt)}”</div>`);
-
+	if (fields.has('activity') && s.group === 'working' && d.currentTool) rows.push(`<div class="activity">${esc(d.currentTool)}</div>`);
+	if (fields.has('lastPrompt') && d.lastPrompt) rows.push(`<div class="prompt">${esc(d.lastPrompt)}</div>`);
 	const meta = [];
-	if (fields.has('model') && d.model) meta.push(modelLabel(d.model) + (d.effort ? ` ${d.effort}` : ''));
-	if (fields.has('context') && d.contextTokens) meta.push(t(lang, 'card.context', { n: compact(lang, d.contextTokens) }));
-	if (fields.has('tokens') && d.outputTokens) meta.push(t(lang, 'card.output', { n: compact(lang, d.outputTokens) }));
-	if (fields.has('times') && s.group !== 'finished') meta.push(relativeTime(lang, s.lastActivity, ctx.now));
-	if (meta.length) rows.push(`<div class="meta">${esc(meta.join(' · '))}</div>`);
+	if (fields.has('model') && d.model) meta.push(`<span>${esc(modelLabel(d.model) + (d.effort ? ` ${d.effort}` : ''))}</span>`);
+	if (fields.has('context') && d.contextTokens) meta.push(`<span title="${esc(t(lang, 'field.context'))}">${icon('context', 13)}${short(d.contextTokens)}</span>`);
+	if (fields.has('tokens') && d.outputTokens) meta.push(`<span title="${esc(t(lang, 'field.tokens'))}">${icon('output', 13)}${short(d.outputTokens)}</span>`);
+	if (meta.length) rows.push(`<div class="meta">${meta.join('')}</div>`);
 	if (fields.has('path') && s.cwd) rows.push(`<div class="path">${esc(tildePath(s.cwd))}</div>`);
 	if (ctx.canReply?.(s.id)) rows.push(replyForm(ctx, s));
-
-	// Finished turn: a full-width band with the time since Claude stopped - the
-	// cue to switch to that window. "Later" puts it aside until the next turn.
 	if (s.group === 'finished') {
 		rows.push(`<form method="post" action="${esc(makeHref(ctx)('/dismiss'))}" class="done-later"><input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="session" value="${esc(s.id)}"><input type="hidden" name="turn" value="${esc(s.turnEndedAt)}"><button type="submit" class="chip">${esc(t(lang, 'finished.later'))}</button></form>`);
 	}
-	const head =
-		s.group === 'finished'
-			? `<div class="done-band"><span class="done-label">${esc(t(lang, 'status.finished'))}</span> <span class="done-since">${esc(elapsed(lang, s.turnEndedAt, ctx.now))}</span></div>
-<div class="card-head"><span class="sub">${esc(sub.join(' · '))}</span></div>`
-			: `<div class="card-head"><span class="badge badge-${s.group}">${esc(t(lang, 'status.' + s.group))}</span><span class="sub">${esc(sub.join(' · '))}</span></div>`;
-	return `<div class="card card-${s.group}">
-${head}
+
+	// Finished: the time since the turn ended is the point, so it is big.
+	const since = s.group === 'finished' ? s.turnEndedAt : s.lastActivity;
+	const time = s.group === 'finished' || fields.has('times') ? elapsed(lang, since, ctx.now) : '';
+	return `<article class="card st-${s.group}">
+<header class="band">${icon(s.group)}<span class="band-label">${esc(t(lang, 'status.' + s.group))}</span><span class="band-time">${esc(time)}</span></header>
 <div class="title">${esc(title)}</div>
+${subLine}
 ${rows.join('\n')}
-</div>`;
+</article>`;
 }
 
 export function templatesFor(config) {
@@ -239,20 +286,21 @@ function replyForm(ctx, s) {
 		.map((text) => `<button type="submit" name="text" value="${esc(text)}" class="chip">${esc(text)}</button>`)
 		.join('');
 	return `<form method="post" action="${esc(href('/reply'))}" class="reply">
-<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="session" value="${esc(s.id)}">
-<div class="reply-label">${esc(t(ctx.config.language, 'reply.label'))}</div>${buttons}
+<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="session" value="${esc(s.id)}">${buttons}
 </form>`;
 }
 
-function section(ctx, key, list, heading) {
-	if (!list.length) return '';
-	return `<h2 class="h-${key}">${heading ?? `${esc(t(ctx.config.language, 'section.' + key))} <span class="count">${list.length}</span>`}</h2>
-<div class="grid cols-${ctx.config.columns}">
-${list.map((s) => card(ctx, s)).join('\n')}
+// Cards in priority order on one board. Without JavaScript the board is a plain
+// grid; with it, cards are dealt into columns, each to the shortest one, so a
+// tall card never leaves a hole next to a short one (see liveScript).
+function board(ctx, cards) {
+	if (!cards.length) return '';
+	return `<div class="board cols-${ctx.config.columns}" data-cols="${ctx.config.columns}">
+${cards.join('\n')}
 </div>`;
 }
 
-// Limits strip: one bar per window with %, reset time and a forecast.
+// Limits strip: both windows on one row, each with %, reset and forecast.
 function limitsStrip(ctx, usage) {
 	const lang = ctx.config.language;
 	if (!usage) return '';
@@ -262,76 +310,70 @@ function limitsStrip(ctx, usage) {
 		const sameDay = new Date(ctx.now).toDateString() === d.toDateString();
 		return new Intl.DateTimeFormat(lang, sameDay ? { hour: '2-digit', minute: '2-digit' } : { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(d);
 	};
-	const row = (key) => {
+	const cell = (key) => {
 		const w = usage[key];
 		if (!w) return '';
+		const name = `<span class="limit-name">${esc(t(lang, 'limits.' + key))}</span>`;
 		// The window has reset since this reading: its number no longer applies.
 		if (w.resetAt && w.resetAt <= ctx.now) {
-			return `<div class="limit"><span class="limit-name">${esc(t(lang, 'limits.' + key))}</span><span class="meter"><span style="width:0%"></span></span><b>–</b><span class="limit-note">${esc(t(lang, 'limits.expired'))}</span></div>`;
+			return `<div class="limit">${name}<span class="meter"><span style="width:0%"></span></span><b>–</b><div class="limit-note">${esc(t(lang, 'limits.expired'))}</div></div>`;
 		}
 		const pct = Math.round(w.used * 100);
 		const f = forecast(w, PERIODS[key], ctx.now);
 		const notes = [];
-		if (w.resetAt) notes.push(t(lang, 'limits.reset', { when: when(w.resetAt) }));
 		if (f?.fullAt) notes.push(t(lang, 'limits.fullAt', { when: when(f.fullAt) }));
 		else if (f) notes.push(t(lang, 'limits.forecast', { pct: Math.min(100, Math.round(f.atReset * 100)) }));
+		if (w.resetAt) notes.push(t(lang, 'limits.reset', { when: when(w.resetAt) }));
 		const level = pct >= 90 || f?.fullAt ? ' meter-hot' : pct >= 70 ? ' meter-warm' : '';
-		return `<div class="limit"><span class="limit-name">${esc(t(lang, 'limits.' + key))}</span><span class="meter${level}"><span style="width:${Math.min(100, pct)}%"></span></span><b>${pct}%</b><span class="limit-note">${esc(notes.join(' · '))}</span></div>`;
+		return `<div class="limit">${name}<span class="meter${level}"><span style="width:${Math.min(100, pct)}%"></span></span><b>${pct}%</b><div class="limit-note">${esc(notes.join(' · '))}</div></div>`;
 	};
-	const age = usage.observedAt ? relativeTime(lang, usage.observedAt, ctx.now) : '';
-	return `<a class="limits" href="${esc(makeHref(ctx)('/limits'))}">${row('fiveHour')}${row('sevenDay')}<div class="limit-age">${esc(t(lang, 'limits.age', { when: age }))}</div></a>`;
+	return `<a class="limits" href="${esc(makeHref(ctx)('/limits'))}">${cell('fiveHour')}${cell('sevenDay')}</a>`;
 }
 
-// Permission requests held for the reader: what is asked, by which session,
-// and three big buttons. Plain forms, so they work without JavaScript.
-function approvalsBlock(ctx, list, sessions) {
-	if (!list.length) return '';
+// Permission requests and questions held for the reader, as cards on the board.
+// Plain forms, so they work without JavaScript.
+function approvalCards(ctx, list, sessions) {
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
 	const byId = new Map(sessions.map((s) => [s.id, s]));
-	const cards = list
-		.map((a) => {
-			const s = byId.get(a.sessionId);
-			const title = s?.details?.title || s?.name || a.cwd.split('/').pop() || '';
-			const project = s?.project || a.cwd.split('/').pop() || '';
-			const head = (badge) =>
-				`<div class="card-head"><span class="badge badge-needsYou">${esc(badge)}</span><span class="sub">${esc(project)} · ${esc(relativeTime(lang, a.createdAt, ctx.now))}</span></div>
-<div class="title">${esc(title)}</div>`;
-			const hidden = `<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="id" value="${esc(a.id)}">`;
-			if (a.kind === 'question') {
-				const single = a.questions.length === 1 && !a.questions[0].multiSelect;
-				const blocks = a.questions
-					.map((q, i) => {
-						const type = q.multiSelect ? 'checkbox' : 'radio';
-						const opts = q.options
-							.map(
-								(o) =>
-									`<label class="choice option"><input type="${type}" name="q${i}" value="${esc(o.label)}"><span><b>${esc(o.label)}</b>${o.description ? `<small>${esc(o.description)}</small>` : ''}</span></label>`,
-							)
-							.join('');
-						return `<div class="question"><div class="q-text">${esc(q.question)}</div><div class="options">${opts}</div></div>`;
-					})
-					.join('');
-				return `<div class="card card-needsYou approval">
-${head(t(lang, 'question.badge'))}
+	const lastPart = (p) => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '';
+	return list.map((a) => {
+		const s = byId.get(a.sessionId);
+		const title = s?.details?.title || s?.name || lastPart(a.cwd);
+		const project = s?.project || lastPart(a.cwd);
+		const kind = a.kind === 'question' ? 'question' : 'permission';
+		const head = `<header class="band">${icon(kind)}<span class="band-label">${esc(t(lang, kind === 'question' ? 'question.badge' : 'approval.badge'))}</span><span class="band-time">${esc(elapsed(lang, a.createdAt, ctx.now))}</span></header>
+<div class="title">${esc(title)}</div>
+${project && project !== title ? `<div class="sub">${esc(project)}</div>` : ''}`;
+		const hidden = `<input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="id" value="${esc(a.id)}">`;
+		if (kind === 'question') {
+			const single = a.questions.length === 1 && !a.questions[0].multiSelect;
+			const blocks = a.questions
+				.map((q, i) => {
+					const type = q.multiSelect ? 'checkbox' : 'radio';
+					const opts = q.options
+						.map((o) => `<label class="choice option"><input type="${type}" name="q${i}" value="${esc(o.label)}"><span><b>${esc(o.label)}</b>${o.description ? `<small>${esc(o.description)}</small>` : ''}</span></label>`)
+						.join('');
+					return `<div class="question"><div class="q-text">${esc(q.question)}</div><div class="options">${opts}</div></div>`;
+				})
+				.join('');
+			return `<article class="card st-needsYou approval">
+${head}
 <form method="post" action="${esc(href('/answer'))}" class="answer${single ? ' answer-single' : ''}">${hidden}
 ${blocks}
 <div class="approval-actions">${single ? '' : `<button type="submit" class="button btn-allow">${esc(t(lang, 'question.send'))}</button>`}<button type="submit" name="action" value="release" class="button btn-release">${esc(t(lang, 'approval.release'))}</button></div>
 </form>
-</div>`;
-			}
-			const button = (action, cls) =>
-				`<button type="submit" name="action" value="${action}" class="button ${cls}">${esc(t(lang, 'approval.' + action))}</button>`;
-			return `<div class="card card-needsYou approval">
-${head(t(lang, 'approval.badge'))}
+</article>`;
+		}
+		const button = (action, cls) => `<button type="submit" name="action" value="${action}" class="button ${cls}">${esc(t(lang, 'approval.' + action))}</button>`;
+		return `<article class="card st-needsYou approval">
+${head}
 <div class="ask"><b>${esc(a.tool)}</b>${a.detail ? `<code>${esc(a.detail)}</code>` : ''}</div>
 <form method="post" action="${esc(href('/approve'))}" class="approval-actions">${hidden}
 ${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 'btn-release')}
 </form>
-</div>`;
-		})
-		.join('\n');
-	return `<h2 class="h-needsYou">${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
+</article>`;
+	});
 }
 
 // Limits screen: the strip, then three charts with one series each.
@@ -386,36 +428,30 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 	ctx.canReply = canReply;
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
-	const idleCount = groups.idle.length + groups.stale.length;
-	const sum = (key, n) => `<span class="sum sum-${key}${n ? ' sum-on' : ''}"><b>${n}</b> ${esc(t(lang, 'summary.' + key))}</span>`;
-	const summary = [
-		sum('needsYou', groups.needsYou.length + approvalList.length),
-		sum('finished', groups.finished.length),
-		sum('working', groups.working.length),
-		sum('idle', idleCount),
-	].join('\n');
+	// Four tiles, readable from across the desk. A tile that wants you is filled.
+	const tile = (key, n, glyph) =>
+		`<div class="tile tile-${key}${n ? ' on' : ''}"><span class="tile-top">${icon(glyph, 20)}<b>${n}</b></span><span class="tile-label">${esc(t(lang, 'summary.' + key))}</span></div>`;
+	const summary = `<div class="tiles">${[
+		tile('needsYou', groups.needsYou.length + approvalList.length, 'needsYou'),
+		tile('finished', groups.finished.length, 'finished'),
+		tile('working', groups.working.length, 'working'),
+		tile('idle', groups.idle.length + groups.stale.length, 'idle'),
+	].join('')}</div>`;
 
-	let body = limitsStrip(ctx, usage) + '<div id="main">' + approvalsBlock(ctx, approvalList, data.sessions);
-	if (data.error) {
-		body += `<div class="error"><b>${esc(t(lang, 'error.title'))}</b><br>${esc(data.error)}</div>`;
-	} else if (!data.sessions.length) {
-		body += `<p class="empty">${esc(t(lang, 'empty'))}</p>`;
-	} else {
-		body += section(ctx, 'needsYou', groups.needsYou);
-		body += section(ctx, 'finished', groups.finished);
-		body += section(ctx, 'working', groups.working);
-		body += section(ctx, 'idle', groups.idle);
-		if (groups.stale.length) {
-			const label = esc(t(lang, 'section.stale', { count: groups.stale.length, hours: ctx.config.hideIdleAfterHours }));
-			const toggle = showStale
-				? `<a href="${esc(href('/'))}" data-live>${esc(t(lang, 'stale.hide'))}</a>`
-				: `<a href="${esc(href('/', { stale: '1' }))}" data-live>${esc(t(lang, 'stale.show'))}</a>`;
-			if (showStale) body += section(ctx, 'stale', groups.stale, `${label} · ${toggle}`);
-			else body += `<h2 class="stale-head">${label} · ${toggle}</h2>`;
-		}
+	let body = limitsStrip(ctx, usage) + '<div id="main">';
+	if (data.error) body += `<div class="error"><b>${esc(t(lang, 'error.title'))}</b><br>${esc(data.error)}</div>`;
+	else if (!data.sessions.length && !approvalList.length) body += `<p class="empty">${esc(t(lang, 'empty'))}</p>`;
+	const list = [...groups.needsYou, ...groups.finished, ...groups.working, ...groups.idle, ...(showStale ? groups.stale : [])];
+	body += board(ctx, [...approvalCards(ctx, approvalList, data.sessions), ...list.map((s) => card(ctx, s))]);
+	if (groups.stale.length) {
+		const label = esc(t(lang, 'section.stale', { count: groups.stale.length, hours: ctx.config.hideIdleAfterHours }));
+		const toggle = showStale
+			? `<a href="${esc(href('/'))}" data-live>${esc(t(lang, 'stale.hide'))}</a>`
+			: `<a href="${esc(href('/', { stale: '1' }))}" data-live>${esc(t(lang, 'stale.show'))}</a>`;
+		body += `<p class="stale-line">${label} · ${toggle}</p>`;
 	}
 	body += '</div>';
-	return layout(ctx, { title: t(lang, 'app.title'), active: 'sessions', summary, body, live: true });
+	return layout(ctx, { title: t(lang, 'app.title'), active: 'sessions', summary, body, live: true, usage });
 }
 
 // Settings in tabs, as big buttons (radio groups and toggles styled as buttons):
@@ -507,7 +543,7 @@ ${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} 
 				u.method === 'git' && ctx.local
 					? `<button type="submit" name="action" value="install" class="button btn-allow">${esc(t(lang, 'about.install'))}</button>`
 					: `<p>${esc(t(lang, 'about.how.' + u.method))}</p>`;
-			state = `<p><b>${esc(t(lang, 'about.available', { version: u.latest.version }))}</b> · <a href="${esc(u.latest.url)}">${esc(t(lang, 'about.releaseNotes'))}</a></p>${notes}${how}`;
+			state = `<p><b>${esc(t(lang, 'about.available', { version: u.latest.version }))}</b>${u.latest.url ? ` · <a href="${esc(u.latest.url)}">${esc(t(lang, 'about.releaseNotes'))}</a>` : ''}</p>${notes}${how}`;
 		} else {
 			state = `<p>${esc(u.error ? t(lang, 'about.error', { reason: u.error }) : t(lang, 'about.upToDate'))}</p>`;
 		}

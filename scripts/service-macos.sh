@@ -29,6 +29,7 @@ case "${1:-}" in
 		[ -n "$CLAUDE" ] && SERVICE_PATH="$SERVICE_PATH:$(dirname "$CLAUDE")"
 		SERVICE_PATH="$SERVICE_PATH:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 		mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+		touch "$LOG" && chmod 600 "$LOG"   # pairing codes are logged: owner only
 		cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

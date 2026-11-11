@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Demo mode: the panel with made-up sessions, on its own port and config, next
-// to (never instead of) a real panel. Usage: npm run demo [-- --port 4800 --lang pl]
+// to (never instead of) a real panel. Usage: npm run demo [-- --port 4800 --lang pl --mono --scale 1.25]
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,7 +14,7 @@ const arg = (name, fallback) => {
 const dir = join(tmpdir(), 'inkglance-demo');
 mkdirSync(dir, { recursive: true });
 const config = join(dir, 'config.json');
-writeFileSync(config, JSON.stringify({ port: Number(arg('port', 4800)), language: arg('lang', 'en'), token: randomBytes(18).toString('base64url'), updateCheck: false, showDiagnostics: false }, null, '\t'), { mode: 0o600 });
+writeFileSync(config, JSON.stringify({ port: Number(arg('port', 4800)), language: arg('lang', 'en'), token: randomBytes(18).toString('base64url'), updateCheck: false, showDiagnostics: false, color: !process.argv.includes('--mono'), fontScale: Number(arg('scale', 1)) }, null, '\t'), { mode: 0o600 });
 
 const child = spawn(process.execPath, [new URL('../src/server.js', import.meta.url).pathname], {
 	stdio: 'inherit',

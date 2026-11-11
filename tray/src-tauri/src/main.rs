@@ -163,7 +163,16 @@ fn start_server(app: &AppHandle) {
         return; // a server (e.g. the LaunchAgent service) already runs: attach to it
     }
     let (Some(node), Some(dir)) = (find_node(), server_dir(app)) else { return };
-    let log = OpenOptions::new().create(true).append(true).open(log_path());
+    // The log holds pairing codes: readable by this user only.
+    let mut opts = OpenOptions::new();
+    opts.create(true).append(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        opts.mode(0o600);
+        let _ = std::fs::set_permissions(log_path(), std::fs::Permissions::from_mode(0o600));
+    }
+    let log = opts.open(log_path());
     let mut cmd = Command::new(node);
     cmd.arg(dir.join("src").join("server.js")).current_dir(&dir);
     if let Ok(f) = log {
@@ -300,7 +309,8 @@ fn main() {
                         }
                         "update" => {
                             let url = app.state::<UpdateUrl>().0.lock().unwrap().clone();
-                            if !url.is_empty() {
+                            // Only release pages on GitHub: never a file or script URL.
+                            if url.starts_with("https://github.com/") {
                                 let _ = app.opener().open_url(url, None::<&str>);
                             }
                         }
@@ -324,6 +334,23 @@ fn main() {
             std::thread::spawn(move || loop {
                 let conf = read_conf();
                 let lang = conf.lang.clone();
+                // Watchdog: the server exited (crash, or a restart after an update
+                // installed from the panel) and nothing else answers - start it again.
+                if !healthy(conf.port) {
+                    let exited = {
+                        let state = handle.state::<Mutex<Server>>();
+                        let mut s = state.lock().unwrap();
+                        let gone = s.child.as_mut().map(|c| matches!(c.try_wait(), Ok(Some(_)))).unwrap_or(true);
+                        if gone {
+                            s.child = None;
+                        }
+                        gone
+                    };
+                    if exited {
+                        start_server(&handle);
+                        std::thread::sleep(Duration::from_secs(2));
+                    }
+                }
                 let state = http_get(conf.port, &format!("/state?t={}", conf.token))
                     .and_then(|b| serde_json::from_str::<serde_json::Value>(&b).ok());
                 let tray = handle.tray_by_id(TRAY_ID);

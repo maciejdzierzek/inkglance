@@ -104,3 +104,29 @@ export function idleSeconds(platform = process.platform) {
 		run(idleCommand(platform), (err, out) => resolve(err ? null : parseIdle(platform, out)), { maxBuffer: 4 * 1024 * 1024 });
 	});
 }
+
+// Idle time for permission requests, without the wait. On Windows every reading
+// starts PowerShell and compiles a helper (1-3 s), so a background loop keeps a
+// fresh value while requests come in and stops after 10 quiet minutes. Elsewhere
+// a reading takes milliseconds and runs directly.
+let cached = { value: null, at: 0, lastAsked: 0, timer: null };
+export function idleSecondsFast(platform = process.platform, read = idleSeconds) {
+	if (platform !== 'win32') return read(platform);
+	const now = Date.now();
+	cached.lastAsked = now;
+	if (!cached.timer) {
+		const tick = async () => {
+			cached.value = await read(platform);
+			cached.at = Date.now();
+			if (Date.now() - cached.lastAsked > 10 * 60 * 1000) {
+				clearInterval(cached.timer);
+				cached.timer = null;
+			}
+		};
+		cached.timer = setInterval(tick, idleCheckMs(platform));
+		cached.timer.unref?.();
+		return tick().then(() => cached.value); // the very first reading waits once
+	}
+	// Still fresh: answer at once. The loop keeps it current.
+	return Promise.resolve(now - cached.at < 3 * idleCheckMs(platform) ? cached.value : null);
+}

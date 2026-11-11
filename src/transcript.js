@@ -46,7 +46,7 @@ export function describeTool(block) {
 	const input = block.input || {};
 	const detail =
 		input.description ||
-		(input.file_path && input.file_path.split('/').pop()) ||
+		(input.file_path && input.file_path.split(/[\\/]/).pop()) ||
 		input.pattern ||
 		input.command ||
 		input.url ||

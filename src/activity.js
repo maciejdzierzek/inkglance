@@ -6,6 +6,7 @@
 // only those changed within the window.
 
 import { open, readdir, stat } from 'node:fs/promises';
+import { StringDecoder } from 'node:string_decoder';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -31,7 +32,7 @@ export function bucket(state, entry) {
 async function update(path, size) {
 	let st = files.get(path);
 	if (!st || size < st.size) {
-		st = { offset: 0, size: 0, partial: '', seen: new Map(), hours: new Map() };
+		st = { offset: 0, size: 0, partial: '', seen: new Map(), hours: new Map(), decoder: new StringDecoder('utf8') };
 		files.set(path, st);
 	}
 	if (size > st.offset) {
@@ -43,7 +44,7 @@ async function update(path, size) {
 				const { bytesRead } = await fh.read(buf, 0, len, st.offset);
 				if (!bytesRead) break;
 				st.offset += bytesRead;
-				const lines = (st.partial + buf.subarray(0, bytesRead).toString('utf8')).split('\n');
+				const lines = (st.partial + st.decoder.write(buf.subarray(0, bytesRead))).split('\n');
 				st.partial = lines.pop();
 				for (const line of lines) {
 					if (!line.includes('"assistant"')) continue;
@@ -61,9 +62,17 @@ async function update(path, size) {
 	st.size = size;
 }
 
-// Output tokens per hour for the last `hours` hours (oldest first).
-export async function hourlyTokens(hours = 24, now = Date.now(), root = join(homedir(), '.claude', 'projects')) {
+// Output tokens per hour for the last `hours` hours (oldest first). One run at
+// a time: overlapping runs would read the same bytes twice.
+let running = null;
+export function hourlyTokens(hours = 24, now = Date.now(), root = join(homedir(), '.claude', 'projects')) {
+	if (!running) running = collect(hours, now, root).finally(() => (running = null));
+	return running;
+}
+
+async function collect(hours, now, root) {
 	const from = Math.floor((now - hours * HOUR) / HOUR) * HOUR + HOUR;
+	const active = new Set();
 	const dirs = await readdir(root).catch(() => []);
 	for (const dir of dirs) {
 		const names = await readdir(join(root, dir)).catch(() => []);
@@ -72,8 +81,15 @@ export async function hourlyTokens(hours = 24, now = Date.now(), root = join(hom
 			const path = join(root, dir, name);
 			const s = await stat(path).catch(() => null);
 			if (!s || s.mtimeMs < from) continue;
+			active.add(path);
 			await update(path, s.size).catch(() => {});
 		}
+	}
+	// Memory stays bounded on a server that runs for weeks: forget files quiet for
+	// the whole window and hours that fell out of it.
+	for (const [path, st] of files) {
+		if (!active.has(path)) files.delete(path);
+		else for (const h of st.hours.keys()) if (h < from) st.hours.delete(h);
 	}
 	const totals = new Map();
 	for (const st of files.values()) {

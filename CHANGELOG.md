@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- New panel layout: four state tiles with icons and big numbers; plan limits
+  on one row; one board of cards, most urgent first, dealt into columns without
+  gaps (permission requests and questions included); every card has a colored
+  state band with icon and time; idle sessions take two lines; numbers as
+  84k / 12.3k with icons.
+- Default reply buttons no longer repeat themselves: "Yes, go ahead", "Plan
+  first, no changes yet", "Sum up in three sentences", "Run the tests",
+  "Commit".
+- Menu-bar app restarts the server if it exits (crash, or a restart after an
+  update installed from the panel); opens only GitHub release links.
+- Bounded memory and disk for long runs (token activity, status-line
+  snapshots older than 7 days are deleted); one activity scan at a time.
+- Windows: idle time is read in the background, so permission requests are not
+  delayed by PowerShell start-up.
+- Hardening: Referrer-Policy, X-Frame-Options and nosniff headers; diagnostics
+  in the log are sanitized; logs with pairing codes are owner-only; release
+  links other than GitHub pages are ignored; Windows paths split correctly.
+- CONTRIBUTING, Code of Conduct, issue templates (bug, e-reader report), PR
+  template, FAQ; demo flags `--mono` and `--scale`.
+
 - Security: pairing codes have 6 digits and at most 3 are issued per hour
   (guessing a code from the network is no longer practical); only loopback and
   private networks may connect; the Host header must name this computer

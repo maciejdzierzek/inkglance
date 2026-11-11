@@ -73,7 +73,7 @@ async function enrich(session, config, now) {
 		id: session.sessionId || session.id || String(session.pid),
 		name: session.name || '',
 		cwd: session.cwd || '',
-		project: (session.cwd || '').split('/').filter(Boolean).pop() || '',
+		project: (session.cwd || '').split(/[\\/]/).filter(Boolean).pop() || '', // Windows paths too
 		kind: session.kind || '',
 		status: session.status || '',
 		waitingFor: session.waitingFor || '',

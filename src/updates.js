@@ -49,7 +49,9 @@ export function fromRelease(json) {
 		.map((l) => l.replace(/^[-*#\s]+/, '').trim())
 		.filter(Boolean)
 		.slice(0, 6);
-	return { version: json.tag_name.replace(/^v/, ''), url: json.html_url, publishedAt: json.published_at, notes };
+	// The link goes into the panel and the tray menu: only GitHub release pages.
+	const url = typeof json.html_url === 'string' && json.html_url.startsWith('https://github.com/') ? json.html_url : '';
+	return { version: String(json.tag_name).replace(/^v/, '').slice(0, 40), url, publishedAt: json.published_at, notes };
 }
 
 export function createUpdates({ getConfig, log, fetchImpl = fetch, now = () => Date.now() }) {

@@ -1,0 +1,38 @@
+name: Bug report
+description: Something does not work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Computer
+      placeholder: macOS 26.1 / Windows 11 / Ubuntu 26.04
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: InkGlance and Claude Code versions
+      placeholder: "InkGlance 0.1.0 (Settings → About), Claude Code 2.x (claude --version)"
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed as
+      options: [Claude Code plugin, git clone, menu-bar app]
+  - type: input
+    id: reader
+    attributes:
+      label: Reader and its DIAG line
+      description: The footer line with viewport and browser (Settings → Display → Diagnostics)
+      placeholder: "PocketBook Verse Pro Color · 572×663 · dpr 1.875 · Chrome 122"
+  - type: textarea
+    id: log
+    attributes:
+      label: Log lines (remove project names and anything private)
+      render: text

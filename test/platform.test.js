@@ -31,3 +31,13 @@ test('idle time per platform', () => {
 	assert.equal(parseIdle('linux', 'garbage'), null);
 	assert.equal(idleCheckMs('win32'), 5000);
 });
+
+test('Windows idle readings come from a background loop after the first one', async () => {
+	const { idleSecondsFast } = await import('../src/platform.js');
+	let reads = 0;
+	const read = async () => (++reads, 42);
+	assert.equal(await idleSecondsFast('win32', read), 42); // first call waits for a reading
+	assert.equal(await idleSecondsFast('win32', read), 42); // then answers from the cache
+	assert.equal(reads, 1);
+	assert.equal(await idleSecondsFast('darwin', async () => 7), 7); // elsewhere: direct
+});

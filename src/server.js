@@ -56,7 +56,7 @@ const approvals = createApprovals({
 		// A new request is an alert like a session starting to wait.
 		const current = approvals.list();
 		for (const a of current) {
-			if (!knownApprovals.has(a.id)) alerts([{ kind: 'needsYou', session: { id: a.id, project: a.cwd.split('/').pop() || a.tool, name: a.tool } }]);
+			if (!knownApprovals.has(a.id)) alerts([{ kind: 'needsYou', session: { id: a.id, project: a.cwd.split(/[\\/]/).pop() || a.tool, name: a.tool } }]);
 		}
 		knownApprovals = new Set(current.map((a) => a.id));
 	},
@@ -105,8 +105,12 @@ function readBody(req, limit = MAX_BODY) {
 	});
 }
 
+// Pages may carry the token in their address: never leak it through a Referer,
+// and never let another site frame the panel.
+const SAFE_HEADERS = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff' };
+
 function send(res, status, body, headers = {}) {
-	res.writeHead(status, { 'Cache-Control': 'no-store', ...headers });
+	res.writeHead(status, { ...SAFE_HEADERS, ...headers });
 	res.end(body);
 }
 
@@ -327,7 +331,10 @@ async function handle(req, res) {
 
 	if (url.pathname === '/diag') {
 		const p = url.searchParams;
-		log('DIAG', `viewport ${p.get('w')}x${p.get('h')} dpr ${p.get('r')}`, `cookie ${viaCookie ? 'yes' : 'no'}`, p.get('ua'));
+		// Values come from the browser: printable characters only, so nothing can
+		// forge a log line (such as a fake pairing code).
+		const clean = (v, max = 200) => String(v ?? '').replace(/[^\x20-\x7e]/g, '').slice(0, max);
+		log('DIAG', `viewport ${clean(p.get('w'), 6)}x${clean(p.get('h'), 6)} dpr ${clean(p.get('r'), 6)}`, `cookie ${viaCookie ? 'yes' : 'no'}`, clean(p.get('ua')));
 		return send(res, 204, '');
 	}
 

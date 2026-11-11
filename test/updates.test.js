@@ -36,3 +36,8 @@ test('check: newer release reported, 404 means no releases, daily throttle', asy
 	const none = createUpdates({ getConfig: () => ({ updateCheck: true }), log: () => {}, fetchImpl: async () => ({ status: 404, ok: false }) });
 	assert.equal((await none.check()).available, false);
 });
+
+test('release links other than GitHub pages are dropped', () => {
+	assert.equal(fromRelease({ tag_name: 'v1.0.0', html_url: 'javascript:alert(1)' }).url, '');
+	assert.equal(fromRelease({ tag_name: 'v1.0.0', html_url: 'https://github.com/o/r/releases/tag/v1.0.0' }).url, 'https://github.com/o/r/releases/tag/v1.0.0');
+});
