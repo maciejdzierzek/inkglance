@@ -23,6 +23,8 @@ export const CARD_FIELDS = ['where', 'waitingFor', 'activity', 'lastPrompt', 'mo
 // Presets offered as buttons on the settings screen (the file accepts any value in range).
 export const REFRESH_PRESETS = [30, 60, 120, 300, 600];
 export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
+// How long a finished turn stays in "your turn" before the session counts as idle (0 = off).
+export const FINISHED_PRESETS = [0, 1, 2, 4, 8, 24];
 export const ALERT_KINDS = ['needsYou', 'finished'];
 export { MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES };
 export const USAGE_API_PRESETS = [15, 30, 60];
@@ -37,10 +39,11 @@ export const DEFAULTS = Object.freeze({
 	orientation: 'auto',
 	cardFields: ['where', 'waitingFor', 'activity', 'lastPrompt', 'model', 'context', 'tokens', 'times'],
 	hideIdleAfterHours: 24,
+	finishedHours: 4,
 	color: true,
 	fontScale: 1,
 	showDiagnostics: true,
-	alertOn: ['needsYou'],
+	alertOn: ['needsYou', 'finished'],
 	macSound: true,
 	macSoundName: 'Glass',
 	macNotification: false,
@@ -56,6 +59,8 @@ export const DEFAULTS = Object.freeze({
 	replyWindowHours: 4,
 	// Reply buttons; empty = the language's defaults. Edit in the file.
 	templates: [],
+	updateCheck: true,
+	updateRepo: 'maciejdzierzek/inkglance',
 	claudeBin: 'claude',
 	token: '',
 });
@@ -93,6 +98,7 @@ export function normalize(input = {}, base = DEFAULTS) {
 			? CARD_FIELDS.filter((f) => input.cardFields.includes(f))
 			: base.cardFields,
 		hideIdleAfterHours: clampInt(input.hideIdleAfterHours, 0, 24 * 30, base.hideIdleAfterHours),
+		finishedHours: clampInt(input.finishedHours, 0, 24 * 7, base.finishedHours),
 		color: toBool(input.color, base.color),
 		fontScale: FONT_SCALES.includes(scale) ? scale : base.fontScale,
 		showDiagnostics: toBool(input.showDiagnostics, base.showDiagnostics),
@@ -110,6 +116,8 @@ export function normalize(input = {}, base = DEFAULTS) {
 		approvalTimeoutMinutes: clampInt(input.approvalTimeoutMinutes, 1, 14, base.approvalTimeoutMinutes),
 		replies: toBool(input.replies, base.replies),
 		replyWindowHours: clampInt(input.replyWindowHours, 1, 24, base.replyWindowHours),
+		updateCheck: toBool(input.updateCheck, base.updateCheck),
+		updateRepo: typeof input.updateRepo === 'string' && /^[\w.-]+\/[\w.-]+$/.test(input.updateRepo) ? input.updateRepo : base.updateRepo,
 		templates: Array.isArray(input.templates)
 			? input.templates.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim().slice(0, 200)).slice(0, 12)
 			: base.templates,
@@ -155,12 +163,13 @@ export function saveConfig(config, path = configPath()) {
 // fields, so an unchecked box on one tab never switches off something on another.
 export const SETTINGS_TABS = {
 	display: ['language', 'orientation', 'columns', 'fontScale', 'refreshSeconds', 'color', 'showDiagnostics'],
-	cards: ['cardFields', 'hideIdleAfterHours'],
+	cards: ['cardFields', 'finishedHours', 'hideIdleAfterHours'],
 	replies: ['templates', 'replies', 'replyWindowHours', 'approvals', 'awaySeconds', 'approvalTimeoutMinutes'],
 	alerts: ['alertOn', 'macSound', 'macNotification', 'readerFlash', 'macSoundName', 'quietHours'],
 	limits: ['showLimits', 'usageSource', 'usageApiMinutes'],
+	about: ['updateCheck'],
 };
-const CHECKBOXES = ['color', 'showDiagnostics', 'replies', 'macSound', 'macNotification', 'readerFlash', 'showLimits'];
+const CHECKBOXES = ['color', 'showDiagnostics', 'replies', 'macSound', 'macNotification', 'readerFlash', 'showLimits', 'updateCheck'];
 const LISTS = ['cardFields', 'alertOn'];
 
 // Reply buttons edited on the reader: rows of text fields plus remove / move-up

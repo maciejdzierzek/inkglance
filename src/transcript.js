@@ -10,6 +10,7 @@
 // the first poll reads it whole, later polls read only the appended bytes.
 
 import { open, stat } from 'node:fs/promises';
+import { StringDecoder } from 'node:string_decoder';
 
 const states = new Map(); // path -> state
 
@@ -31,6 +32,7 @@ function emptyState() {
 		outputTokens: 0,
 		currentTool: '',
 		lastText: '',
+		turnEndedAt: 0,
 	};
 }
 
@@ -82,11 +84,18 @@ export function applyLine(state, entry) {
 		case 'user': {
 			if (entry.isMeta) break;
 			const text = promptText(entry.message?.content);
+			// "[Request interrupted by user]": the user stopped the turn at the computer.
+			if (text.startsWith('[Request interrupted')) {
+				state.turnEndedAt = 0;
+				state.currentTool = '';
+				break;
+			}
 			// Skip command wrappers and system reminders injected as user turns.
 			if (text && !text.startsWith('<')) {
 				state.prompts += 1;
 				state.lastPrompt = text;
 				state.currentTool = '';
+				state.turnEndedAt = 0;
 			}
 			break;
 		}
@@ -115,6 +124,10 @@ export function applyLine(state, entry) {
 					state.currentTool = '';
 				}
 			}
+			// The turn is over when Claude stops for any reason other than a tool call
+			// (end_turn, max_tokens, an API error...): the next move is the user's.
+			if (msg.stop_reason === 'tool_use') state.turnEndedAt = 0;
+			else if (msg.stop_reason) state.turnEndedAt = Date.parse(entry.timestamp) || Date.now();
 			break;
 		}
 		default:
@@ -134,11 +147,25 @@ export function applyChunk(state, text) {
 	}
 }
 
-async function update(path) {
+// One read per file at a time: two overlapping reads would apply the same bytes
+// twice and move the offset past the end, skipping the next lines.
+const inFlight = new Map(); // path -> Promise<state>
+
+function update(path) {
+	let p = inFlight.get(path);
+	if (!p) {
+		p = readNew(path).finally(() => inFlight.delete(path));
+		inFlight.set(path, p);
+	}
+	return p;
+}
+
+async function readNew(path) {
 	let state = states.get(path);
 	const s = await stat(path);
 	if (!state || s.size < state.size) {
 		state = emptyState(); // new file, or rewritten/truncated
+		state.decoder = new StringDecoder('utf8'); // keeps characters split across reads whole
 		states.set(path, state);
 	}
 	if (s.size > state.offset) {
@@ -151,7 +178,7 @@ async function update(path) {
 				const { bytesRead } = await fh.read(buf, 0, length, state.offset);
 				if (!bytesRead) break;
 				state.offset += bytesRead;
-				applyChunk(state, buf.subarray(0, bytesRead).toString('utf8'));
+				applyChunk(state, state.decoder.write(buf.subarray(0, bytesRead)));
 			}
 		} finally {
 			await fh.close();
@@ -176,6 +203,7 @@ export async function transcriptDetails(path) {
 			contextTokens: s.contextTokens,
 			outputTokens: s.outputTokens,
 			currentTool: s.currentTool,
+			turnEndedAt: s.turnEndedAt,
 		};
 	} catch {
 		return null;

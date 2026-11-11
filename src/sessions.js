@@ -15,6 +15,9 @@ import { transcriptDetails, forgetExcept } from './transcript.js';
 
 const CACHE_MS = 5000;
 let cache = { at: 0, result: null };
+// Finished turns the user put aside on the reader: sessionId -> turnEndedAt.
+// A later turn end shows the session again.
+const dismissed = new Map();
 
 export function transcriptPath(cwd, sessionId, home = homedir()) {
 	return join(home, '.claude', 'projects', cwd.replace(/[^A-Za-z0-9]/g, '-'), `${sessionId}.jsonl`);
@@ -35,14 +38,24 @@ function runAgentsJson(claudeBin) {
 	});
 }
 
-// Maps the documented fields onto three groups the panel cares about.
-export function classify(session) {
+// Maps the documented fields onto the groups the panel cares about:
+//   needsYou - blocked on the user (permission, question, input)
+//   working  - Claude is busy
+//   finished - idle, Claude's last turn ended less than finishedHours ago and the
+//              user has not answered yet: "your turn" (from the transcript)
+//   idle     - everything else
+export function classify(session, details = null, { finishedHours = 0 } = {}, now = Date.now()) {
 	if (session.status === 'waiting' || session.state === 'blocked' || session.waitingFor) return 'needsYou';
 	if (session.status === 'busy' || session.state === 'working') return 'working';
+	const ended = details?.turnEndedAt || 0;
+	if (ended && finishedHours > 0 && now - ended <= finishedHours * 3600 * 1000) {
+		const id = session.sessionId || session.id;
+		if (dismissed.get(id) !== ended) return 'finished';
+	}
 	return 'idle';
 }
 
-async function enrich(session) {
+async function enrich(session, config, now) {
 	let lastActivity = session.startedAt || null;
 	let details = null;
 	let path = '';
@@ -66,18 +79,28 @@ async function enrich(session) {
 		waitingFor: session.waitingFor || '',
 		startedAt: session.startedAt || null,
 		lastActivity,
-		group: classify(session),
+		turnEndedAt: details?.turnEndedAt || 0,
+		group: classify(session, details, config, now),
 		details,
 		transcript: path,
 	};
 }
 
-export async function listSessions({ claudeBin }, now = Date.now()) {
-	if (cache.result && now - cache.at < CACHE_MS) return cache.result;
+// The watcher and readers often ask at the same moment: share one run.
+let pending = null;
+
+export function listSessions(config, now = Date.now()) {
+	if (cache.result && now - cache.at < CACHE_MS) return Promise.resolve(cache.result);
+	if (!pending) pending = fetchSessions(config, now).finally(() => (pending = null));
+	return pending;
+}
+
+async function fetchSessions(config, now) {
+	const { claudeBin } = config;
 	let result;
 	try {
 		const raw = await runAgentsJson(claudeBin);
-		const sessions = await Promise.all(raw.map(enrich));
+		const sessions = await Promise.all(raw.map((s) => enrich(s, config, now)));
 		forgetExcept(sessions.map((s) => s.transcript).filter(Boolean));
 		result = { sessions, error: null, fetchedAt: now };
 	} catch (err) {
@@ -94,14 +117,25 @@ export function groupSessions(sessions, { hideIdleAfterHours }, now = Date.now()
 	const byRecent = (a, b) => (b.lastActivity || 0) - (a.lastActivity || 0);
 	const limit = hideIdleAfterHours > 0 ? hideIdleAfterHours * 3600 * 1000 : Infinity;
 	const idle = sessions.filter((s) => s.group === 'idle').sort(byRecent);
+	const byFinished = (a, b) => b.turnEndedAt - a.turnEndedAt;
 	return {
 		needsYou: sessions.filter((s) => s.group === 'needsYou').sort(byRecent),
+		finished: sessions.filter((s) => s.group === 'finished').sort(byFinished),
 		working: sessions.filter((s) => s.group === 'working').sort(byRecent),
 		idle: idle.filter((s) => now - (s.lastActivity || 0) <= limit),
 		stale: idle.filter((s) => now - (s.lastActivity || 0) > limit),
 	};
 }
 
+// "Seen it, later": the session drops to idle until its next turn ends.
+export function dismiss(sessionId, turnEndedAt) {
+	if (!sessionId || !turnEndedAt) return;
+	dismissed.set(sessionId, turnEndedAt);
+	if (dismissed.size > 500) dismissed.delete(dismissed.keys().next().value);
+	cache = { at: 0, result: null };
+}
+
 export function _resetCache() {
 	cache = { at: 0, result: null };
+	pending = null;
 }

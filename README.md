@@ -38,6 +38,10 @@ is plain HTML and works in any browser.
 - **Claude's questions on the reader**: when Claude asks a multiple-choice
   question, its options appear as big buttons; your tap is delivered as a normal
   answer.
+- **Your turn**: a session whose turn just ended gets its own section with a
+  bold band and a counter ("12 min ago"), flashes the reader, plays a sound on
+  the computer and shows `✓2` next to the menu-bar icon - the nudge to switch
+  windows. *Later* puts it aside until its next turn ends.
 - **One-tap replies** on sessions that finished their turn ("Yes, continue",
   "Commit", your own) - in parallel with the computer, never instead of it.
 - Fullscreen, 1-3 columns, landscape, text size, colors or monochrome,
@@ -224,7 +228,8 @@ can also be changed on the panel's **Settings** screen.
 | `fontScale` | `1` | `0.875` to `1.5` |
 | `color` | `true` | `false` for monochrome screens |
 | `showDiagnostics` | `true` | Viewport and browser line in the footer, also reported to the log |
-| `alertOn` | `["needsYou"]` | Add `finished` to be alerted when a session finishes its turn |
+| `finishedHours` | `4` | How long a finished turn stays in "your turn" before the session counts as idle (0 = off) |
+| `alertOn` | `["needsYou", "finished"]` | Remove `finished` to stay quiet when a session finishes its turn |
 | `macSound`, `macSoundName` | `true`, `Glass` | Sound on the computer: `Glass`, `Ping`, `Submarine`, `Hero` |
 | `macNotification` | `false` | System notification on the computer |
 | `readerFlash` | `true` | Flash the reader's screen |
@@ -246,6 +251,16 @@ Adding a language: copy `src/locales/en.json` to `src/locales/<code>.json`,
 translate, and add the code to `LANGUAGES` in `src/config.js`. A test checks
 that no key is missing.
 
+## Updates
+
+InkGlance checks once a day whether a newer release exists (one anonymous request
+to the GitHub API; switch it off under Settings → About). A new version shows as
+a badge in the panel, in Settings → About and in the menu-bar app's menu. How it
+installs depends on how you installed InkGlance: the menu-bar app downloads the
+new release, a git checkout updates with one button on the computer
+(`git pull --ff-only`, then the panel restarts), the Claude Code plugin with
+`/plugin update inkglance`. Maintainers: [docs/releasing.md](docs/releasing.md).
+
 ## Security
 
 The panel listens on your local network and shows project names and prompts.
@@ -261,7 +276,7 @@ file. Do not expose the port to the internet. See [SECURITY.md](SECURITY.md).
 3. Usage charts - **done**
 4. Answer Claude's multiple-choice questions from the reader - **done**
 5. Menu-bar app - **done** for macOS; Windows and Linux in preview
-6. Update checks and one-click updates
+6. Update checks - **done**; signed one-click app updates with the first release
 7. Jump to the session's window on the computer
 
 ## Development

@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { hostname, networkInterfaces } from 'node:os';
 import { timingSafeEqual } from 'node:crypto';
 import { loadConfig, saveConfig, applySettingsForm, configPath } from './config.js';
-import { listSessions, groupSessions } from './sessions.js';
+import { listSessions, groupSessions, dismiss } from './sessions.js';
 import { sessionsPage, settingsPage, pairingPage, limitsPage } from './render.js';
 import { createPairing, makeSystemNotify } from './pairing.js';
 import { t } from './i18n.js';
@@ -17,6 +17,7 @@ import { createAlerts, playSound, inQuietHours } from './alerts.js';
 import { getUsage, extensionHistory } from './usage.js';
 import { record as recordUsage, historyFor, chartData } from './history.js';
 import { hourlyTokens } from './activity.js';
+import { createUpdates } from './updates.js';
 import { createApprovals } from './approvals.js';
 import { createReplies, wakeText } from './replies.js';
 
@@ -58,6 +59,7 @@ const watcher = createWatcher({
 	extraWaiting: () => approvals.list().map((a) => a.id),
 });
 
+const updates = createUpdates({ getConfig: () => config, log });
 const replies = createReplies({ getConfig: () => config, log, onChange: () => watcher.bump() });
 
 const isLoopback = (addr) => addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
@@ -180,7 +182,7 @@ async function handle(req, res) {
 
 	const keepParams = Object.fromEntries([...url.searchParams].filter(([k]) => k !== 't'));
 	// Until the browser proves it keeps cookies, links carry the token too.
-	const ctx = { config, now: Date.now(), path: url.pathname, keepParams, tokenInLinks: !viaCookie };
+	const ctx = { config, now: Date.now(), path: url.pathname, keepParams, tokenInLinks: !viaCookie, update: updates.status(), local: isLoopback(req.socket.remoteAddress) };
 
 	if (req.method === 'GET' && url.pathname === '/') {
 		const data = await listSessions(config, ctx.now);
@@ -194,9 +196,13 @@ async function handle(req, res) {
 	// Tiny poll for readers: a version that moves when the panel would change,
 	// plus the waiting sessions, so the reader can refresh and flash at once.
 	if (url.pathname === '/state') {
+		const up = updates.status();
 		const body = JSON.stringify({
 			...watcher.state(),
+			version: up.current,
+			update: up.available ? { version: up.latest.version, url: up.latest.url, method: up.method } : null,
 			flash: config.readerFlash && config.alertOn.includes('needsYou') && !inQuietHours(config.quietHours),
+			flashFinished: config.readerFlash && config.alertOn.includes('finished') && !inQuietHours(config.quietHours),
 		});
 		return send(res, 200, body, { 'Content-Type': 'application/json' });
 	}
@@ -224,7 +230,7 @@ async function handle(req, res) {
 			if (!viaCookie) params.set('t', config.token);
 			return send(res, 303, '', { Location: `/settings?${params}` });
 		}
-		return html(res, settingsPage(ctx, { configFile: file, tab: url.searchParams.get('tab') }), cookie);
+		return html(res, settingsPage(ctx, { configFile: file, tab: url.searchParams.get('tab'), installed: url.searchParams.get('installed') }), cookie);
 	}
 
 	// Answer from the reader: allow, deny, or hand back to the computer.
@@ -238,6 +244,26 @@ async function handle(req, res) {
 		else approvals.release(id);
 		const qs = viaCookie ? '' : `?t=${config.token}`;
 		return send(res, 303, '', { Location: `/${qs}` });
+	}
+
+	// Updates: check now (any paired device), install (this computer only - it runs git).
+	if (url.pathname === '/update' && req.method === 'POST') {
+		const form = new URLSearchParams(await readBody(req));
+		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+		const qs = new URLSearchParams({ tab: 'about' });
+		if (!viaCookie) qs.set('t', config.token);
+		if (form.get('action') === 'install') {
+			if (!ctx.local) return send(res, 403, 'install only from this computer');
+			const result = await updates.installGit();
+			log('UPDATE install', result.ok ? 'ok' : 'failed', result.message.slice(0, 200));
+			qs.set('installed', result.ok ? '1' : '0');
+			send(res, 303, '', { Location: `/settings?${qs}` });
+			// A service manager (launchd KeepAlive, the tray app) starts the new code.
+			if (result.ok) setTimeout(() => process.exit(0), 1000);
+			return;
+		}
+		await updates.check({ force: true });
+		return send(res, 303, '', { Location: `/settings?${qs}` });
 	}
 
 	// Answer to one of Claude's questions, from the reader.
@@ -265,6 +291,16 @@ async function handle(req, res) {
 		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
 		const text = (form.get('text') || '').trim();
 		if (text) replies.send(form.get('session') || '', text);
+		const qs = viaCookie ? '' : `?t=${config.token}`;
+		return send(res, 303, '', { Location: `/${qs}` });
+	}
+
+	// "Seen it, later" on a finished session: back to idle until its next turn ends.
+	if (url.pathname === '/dismiss' && req.method === 'POST') {
+		const form = new URLSearchParams(await readBody(req));
+		if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+		dismiss(form.get('session') || '', Number(form.get('turn')) || 0);
+		watcher.bump();
 		const qs = viaCookie ? '' : `?t=${config.token}`;
 		return send(res, 303, '', { Location: `/${qs}` });
 	}
@@ -338,6 +374,7 @@ function writeHookEnv() {
 server.listen(config.port, config.host, () => {
 	writeHookEnv();
 	watcher.start();
+	updates.start();
 	const host = hostname().replace(/\.local$/, '');
 	const port = config.port === 80 ? '' : `:${config.port}`;
 	console.log(`InkGlance is running. Open on your e-reader (same Wi-Fi) and type the code shown here:`);

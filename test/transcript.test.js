@@ -46,3 +46,20 @@ test('model labels and tool descriptions', () => {
 	assert.equal(modelLabel('other'), 'other');
 	assert.equal(describeTool({ name: 'Edit', input: { file_path: '/a/b/server.js' } }), 'Edit: server.js');
 });
+
+test('turn end: set when Claude stops without a tool call, cleared by a prompt, tool call or interrupt', () => {
+	const s = { ...fresh(), turnEndedAt: 0 };
+	const at = '2026-11-11T21:46:28.943Z';
+	applyChunk(s, line({ type: 'assistant', timestamp: at, message: { stop_reason: 'tool_use', content: [{ type: 'tool_use', name: 'Bash', input: {} }] } }));
+	assert.equal(s.turnEndedAt, 0);
+	applyChunk(s, line({ type: 'assistant', timestamp: at, message: { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Done.' }] } }));
+	assert.equal(s.turnEndedAt, Date.parse(at));
+	applyChunk(s, line({ type: 'system', subtype: 'stop_hook_summary' }));
+	assert.equal(s.turnEndedAt, Date.parse(at));
+	applyChunk(s, line({ type: 'user', message: { content: 'next step' } }));
+	assert.equal(s.turnEndedAt, 0);
+	applyChunk(s, line({ type: 'assistant', timestamp: at, message: { stop_reason: 'end_turn', content: [] } }));
+	applyChunk(s, line({ type: 'user', message: { content: [{ type: 'text', text: '[Request interrupted by user]' }] } }));
+	assert.equal(s.turnEndedAt, 0);
+	assert.equal(s.lastPrompt, 'next step'); // the interrupt marker is not a prompt
+});

@@ -84,6 +84,7 @@ fn tr(lang: &str, key: &str) -> &'static str {
         "offline" => if pl { "InkGlance: serwer nie działa" } else { "InkGlance: server not running" },
         "waiting" => if pl { "czeka" } else { "waiting" },
         "working" => if pl { "pracuje" } else { "working" },
+        "done" => if pl { "gotowe" } else { "done" },
         "idle" => if pl { "bezczynne" } else { "idle" },
         "reader" => if pl { "Adres dla czytnika" } else { "Address for the reader" },
         "open" => if pl { "Otwórz panel" } else { "Open panel" },
@@ -94,6 +95,8 @@ fn tr(lang: &str, key: &str) -> &'static str {
         "logs" => if pl { "Pokaż dziennik" } else { "Show log" },
         "quit" => if pl { "Zakończ InkGlance" } else { "Quit InkGlance" },
         "external" => if pl { " (usługa systemowa)" } else { " (system service)" },
+        "update" => if pl { "Nowa wersja" } else { "New version" },
+        "download" => if pl { "pobierz" } else { "download" },
         _ => "",
     }
 }
@@ -103,6 +106,9 @@ fn tr(lang: &str, key: &str) -> &'static str {
 struct Server {
     child: Option<Child>,
 }
+
+// Release page of an available update (empty when up to date).
+struct UpdateUrl(Mutex<String>);
 
 fn http_get(port: u16, path: &str) -> Option<String> {
     let mut s = TcpStream::connect_timeout(&([127, 0, 0, 1], port).into(), Duration::from_millis(800)).ok()?;
@@ -232,6 +238,7 @@ fn main() {
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(Server { child: None }))
+        .manage(UpdateUrl(Mutex::new(String::new())))
         .setup(|app| {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory); // menu bar only, no Dock icon
@@ -258,10 +265,11 @@ fn main() {
             let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
             let autostart = CheckMenuItem::with_id(app, "autostart", tr(&lang, "autostart"), true, autostart_on, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", tr(&lang, "quit"), true, None::<&str>)?;
+            let update = MenuItem::with_id(app, "update", "InkGlance", false, None::<&str>)?;
             let sep = || PredefinedMenuItem::separator(app);
             let menu = Menu::with_items(
                 app,
-                &[&status, &reader, &sep()?, &open, &settings, &limits, &sep()?, &restart, &logs, &autostart, &sep()?, &quit],
+                &[&status, &reader, &sep()?, &open, &settings, &limits, &sep()?, &restart, &logs, &autostart, &sep()?, &update, &quit],
             )?;
 
             // macOS: a monochrome template icon that follows the menu bar's colour.
@@ -290,6 +298,12 @@ fn main() {
                             std::thread::sleep(Duration::from_millis(500));
                             start_server(app);
                         }
+                        "update" => {
+                            let url = app.state::<UpdateUrl>().0.lock().unwrap().clone();
+                            if !url.is_empty() {
+                                let _ = app.opener().open_url(url, None::<&str>);
+                            }
+                        }
                         "logs" => {
                             let _ = app.opener().open_path(log_path().to_string_lossy(), None::<&str>);
                         }
@@ -317,11 +331,30 @@ fn main() {
                     Some(v) => {
                         let c = &v["counts"];
                         let (w, k, i) = (c["needsYou"].as_u64().unwrap_or(0), c["working"].as_u64().unwrap_or(0), c["idle"].as_u64().unwrap_or(0));
+                        let f = c["finished"].as_u64().unwrap_or(0);
                         let external = if owns_server(&handle) { "" } else { tr(&lang, "external") };
-                        let text = format!("{w} {} · {k} {} · {i} {}{external}", tr(&lang, "waiting"), tr(&lang, "working"), tr(&lang, "idle"));
+                        let text = format!("{w} {} · {f} {} · {k} {} · {i} {}{external}", tr(&lang, "waiting"), tr(&lang, "done"), tr(&lang, "working"), tr(&lang, "idle"));
                         let _ = status.set_text(&text);
+                        let version = v["version"].as_str().unwrap_or("");
+                        let url = v["update"]["url"].as_str().unwrap_or("").to_string();
+                        if url.is_empty() {
+                            let _ = update.set_text(format!("InkGlance {version}"));
+                            let _ = update.set_enabled(false);
+                        } else {
+                            let latest = v["update"]["version"].as_str().unwrap_or("");
+                            let _ = update.set_text(format!("{} {latest} — {}", tr(&lang, "update"), tr(&lang, "download")));
+                            let _ = update.set_enabled(true);
+                        }
+                        *handle.state::<UpdateUrl>().0.lock().unwrap() = url;
                         if let Some(t) = &tray {
-                            let _ = t.set_title(if w > 0 { Some(w.to_string()) } else { None::<String> });
+                            // Menu-bar title: blocked sessions, then finished turns ("✓2").
+                            let title = match (w, f) {
+                                (0, 0) => None::<String>,
+                                (w, 0) => Some(w.to_string()),
+                                (0, f) => Some(format!("✓{f}")),
+                                (w, f) => Some(format!("{w} ✓{f}")),
+                            };
+                            let _ = t.set_title(title);
                             let _ = t.set_tooltip(Some(format!("InkGlance: {text}")));
                         }
                     }

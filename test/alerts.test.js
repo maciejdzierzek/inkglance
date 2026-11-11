@@ -12,12 +12,14 @@ test('quiet hours over midnight and within a day', () => {
 	assert.equal(inQuietHours('off', at(23)), false);
 });
 
-test('watcher reports entering "waiting" and finishing a turn, not the first look', () => {
-	const s = (id, group) => ({ id, group });
+test('watcher reports entering "waiting" and each new turn end, not the first look', () => {
+	const s = (id, group, turnEndedAt = 0) => ({ id, group, turnEndedAt });
+	const was = (group, turnEndedAt = 0) => ({ group, turnEndedAt });
 	assert.deepEqual(diff(null, [s('a', 'needsYou')]), []);
-	const prev = new Map([['a', 'working'], ['b', 'working'], ['c', 'needsYou']]);
-	const events = diff(prev, [s('a', 'needsYou'), s('b', 'idle'), s('c', 'needsYou'), s('d', 'needsYou')]);
-	assert.deepEqual(events.map((e) => `${e.kind}:${e.session.id}`), ['needsYou:a', 'finished:b', 'needsYou:d']);
+	const prev = new Map([['a', was('working')], ['b', was('working')], ['c', was('needsYou')], ['e', was('finished', 100)], ['f', was('finished', 100)]]);
+	const events = diff(prev, [s('a', 'needsYou'), s('b', 'finished', 50), s('c', 'needsYou'), s('d', 'needsYou'), s('e', 'finished', 100), s('f', 'finished', 200), s('g', 'finished', 300)]);
+	// e: same turn as before; g: new to us - both silent. f: finished again between two polls.
+	assert.deepEqual(events.map((e) => `${e.kind}:${e.session.id}`), ['needsYou:a', 'finished:b', 'needsYou:d', 'finished:f']);
 });
 
 test('alerts: one sound per batch, respect kinds and quiet hours', () => {

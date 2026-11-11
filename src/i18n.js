@@ -26,3 +26,13 @@ export function relativeTime(lang, timestamp, now = Date.now()) {
 export function clockTime(lang, timestamp) {
 	return new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(timestamp);
 }
+
+// Short elapsed time for counters: "now", "12 min", "1 h 05", "3 d".
+export function elapsed(lang, timestamp, now = Date.now()) {
+	if (!timestamp) return '';
+	const minutes = Math.max(0, Math.floor((now - timestamp) / 60000));
+	if (minutes < 1) return t(lang, 'elapsed.now');
+	if (minutes < 60) return t(lang, 'elapsed.minutes', { m: minutes });
+	if (minutes < 24 * 60) return t(lang, 'elapsed.hours', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
+	return t(lang, 'elapsed.days', { d: Math.floor(minutes / 1440) });
+}

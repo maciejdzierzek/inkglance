@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classify, groupSessions, transcriptPath } from '../src/sessions.js';
+import { classify, groupSessions, transcriptPath, dismiss } from '../src/sessions.js';
 
 test('classify maps documented fields to groups', () => {
 	assert.equal(classify({ status: 'waiting' }), 'needsYou');
@@ -20,4 +20,24 @@ test('old idle sessions are collapsed', () => {
 
 test('transcript path follows the documented folder rule', () => {
 	assert.equal(transcriptPath('/srv/my.app', 'abc', '/h'), '/h/.claude/projects/-srv-my-app/abc.jsonl');
+});
+
+test('an idle session whose turn ended recently is "finished" until dismissed or too old', () => {
+	const now = 100 * 3600 * 1000;
+	const cfg = { finishedHours: 4 };
+	const ended = (hoursAgo) => ({ turnEndedAt: now - hoursAgo * 3600 * 1000 });
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, ended(1), cfg, now), 'finished');
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, ended(5), cfg, now), 'idle');
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, { turnEndedAt: 0 }, cfg, now), 'idle');
+	assert.equal(classify({ sessionId: 'x', status: 'busy' }, ended(1), cfg, now), 'working');
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, ended(1), { finishedHours: 0 }, now), 'idle');
+	dismiss('x', now - 3600 * 1000);
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, ended(1), cfg, now), 'idle');
+	// The next turn end shows it again.
+	assert.equal(classify({ sessionId: 'x', status: 'idle' }, ended(0.5), cfg, now), 'finished');
+});
+
+test('finished sessions: most recent turn end first', () => {
+	const g = groupSessions([{ id: 'a', group: 'finished', turnEndedAt: 1 }, { id: 'b', group: 'finished', turnEndedAt: 2 }], { hideIdleAfterHours: 24 }, 10);
+	assert.deepEqual(g.finished.map((x) => x.id), ['b', 'a']);
 });

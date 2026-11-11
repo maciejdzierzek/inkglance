@@ -17,8 +17,9 @@ a { color: #000; }
 .bar-title { font-weight: bold; font-size: 1.15em; text-transform: uppercase; letter-spacing: 0.04em; }
 .sum { font-size: 1em; white-space: nowrap; }
 .sum b { font-size: 1.5em; }
-.sum-on { font-weight: bold; }
-.color .sum-on b { color: #c8102e; }
+.sum-needsYou.sum-on, .sum-finished.sum-on { font-weight: bold; }
+.color .sum-needsYou.sum-on b { color: #c8102e; }
+.color .sum-finished.sum-on b { color: #1e7b34; }
 .icon { display: inline-flex; align-items: center; gap: 0.3em; min-width: 2.4em; min-height: 2.4em; justify-content: center; padding: 0 0.4em; border: 2px solid #000; background: #fff; color: #000; text-decoration: none; font: inherit; font-weight: bold; cursor: pointer; }
 
 /* Sections and the card grid. */
@@ -42,6 +43,20 @@ h2 { font-size: 0.85em; margin: 0.55em 0 0.3em; text-transform: uppercase; lette
 .color .badge-needsYou { background: #c8102e; border-color: #c8102e; }
 .color .card-needsYou { border-color: #c8102e; }
 .color .badge-working { background: #0b5394; border-color: #0b5394; color: #fff; }
+
+/* Finished turn ("your turn"): a full-width band with the time since Claude
+   stopped. Inverted in mono, green in color - the strongest cue after a block. */
+.card-finished { border-width: 4px; padding-top: 0; }
+.done-band { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5em; margin: 0 -0.4em 0.3em; padding: 0.2em 0.4em 0.25em; background: #000; color: #fff; }
+.done-label { font-weight: bold; font-size: 0.8em; letter-spacing: 0.04em; white-space: nowrap; }
+.done-since { font-weight: bold; font-size: 1.3em; white-space: nowrap; }
+.done-later { margin: 0.35em 0 0; text-align: right; }
+.done-later .chip { font-weight: bold; }
+.color .card-finished { border-color: #1e7b34; }
+.color .done-band { background: #1e7b34; }
+.color .done-later .chip { border-color: #1e7b34; color: #1e7b34; }
+.color h2.h-finished { color: #1e7b34; border-bottom-color: #1e7b34; }
+.color h2.h-needsYou { color: #c8102e; border-bottom-color: #c8102e; }
 .waiting { font-weight: bold; margin-top: 0.15em; font-size: 0.9em; }
 .activity { margin-top: 0.15em; font-size: 0.8em; font-family: Menlo, "Roboto Mono", monospace; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .prompt { margin-top: 0.15em; font-size: 0.8em; font-style: italic; color: #222; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -136,10 +151,19 @@ a.limits { display: block; text-decoration: none; color: #000; }
 .color .chart .grid-max { stroke: #c8102e; }
 
 /* Settings tabs and the reply-button editor. */
-.subtabs { display: flex; flex-wrap: wrap; gap: 0.3em; margin: 0.4em 0 0.7em; }
-.subtab { padding: 0.4em 0.7em; border: 2px solid #000; text-decoration: none; font-weight: bold; font-size: 0.9em; }
-.subtab-on { background: #000; color: #fff; }
+/* Real tabs, not buttons: inactive tabs are grey and lower, the active one is
+   white, raised and open into the panel below it. */
+.tabs { display: flex; align-items: flex-end; margin: 0.5em 0 0; border-bottom: 3px solid #000; }
+.tab { flex: 1 1 auto; text-align: center; padding: 0.4em 0.3em 0.35em; margin-right: -2px; border: 2px solid #000; border-bottom: none; background: #d8d8d8; color: #222; text-decoration: none; font-size: 0.85em; white-space: nowrap; }
+.tab:last-child { margin-right: 0; }
+.tab-on { position: relative; z-index: 1; margin-bottom: -3px; padding: 0.6em 0.3em 0.5em; border-width: 3px; border-bottom: 3px solid #fff; background: #fff; color: #000; font-weight: bold; }
+.tab-panel { border: 3px solid #000; border-top: none; padding: 0.7em 0.55em 0.1em; margin-bottom: 0.5em; }
 .tpl-row { display: flex; gap: 0.3em; margin-bottom: 0.3em; }
 .tpl-row input[type="text"] { flex: 1; min-width: 0; font: inherit; padding: 0.35em 0.45em; border: 2px solid #000; background: #fff; }
 .small-icon { min-width: 2.2em; min-height: 2.2em; padding: 0; }
 .small-icon[disabled] { opacity: 0.3; }
+
+/* About tab and the update badge. */
+.update-badge { font-size: 0.75em; font-weight: bold; padding: 0.15em 0.45em; border: 2px solid #000; text-decoration: none; white-space: nowrap; }
+.color .update-badge { border-color: #1e7b34; color: #1e7b34; }
+.notes { margin: 0.3em 0 0.6em 1.1em; padding: 0; font-size: 0.85em; }

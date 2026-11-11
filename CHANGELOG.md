@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **Your turn**: sessions whose turn ended (read from the transcript: Claude
+  stopped without a tool call and you have not answered) get their own section,
+  a full-width band with the time since they finished, a reader flash, the
+  computer sound (on by default) and `✓N` next to the menu-bar icon. *Later*
+  puts one aside until its next turn ends. Setting `finishedHours` (Settings →
+  Cards).
+- Settings tabs look like tabs (raised active tab joined to its panel).
+- Fixed: overlapping reads of one transcript could double counters or skip
+  lines; one listing and one read per file at a time. Characters split across
+  read chunks stay whole.
+- Fixed: `tray:install` left the previous app's server running on the port.
+
+- Update checks: daily look at the latest GitHub release, badge in the panel,
+  Settings → About (version, install method, what's new, check now, install
+  for git checkouts - from the computer only), update item in the tray menu.
+
 - Windows and Linux (preview): notifications, sounds and idle detection go
   through `src/platform.js` with per-platform commands; hooks have a portable
   Node version (`src/hook.js`) used on Windows; the tray app uses the colour

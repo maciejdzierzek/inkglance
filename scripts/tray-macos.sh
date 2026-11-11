@@ -32,6 +32,9 @@ case "${1:-install}" in
 		build
 		sh "$REPO/scripts/service-macos.sh" uninstall > /dev/null 2>&1 || true
 		pkill -f 'InkGlance.app/Contents/MacOS/inkglance-tray' > /dev/null 2>&1 || true
+		# A killed app leaves its server running on the port: stop it too, or the
+		# new app finds the port taken and the old code keeps serving.
+		pkill -f 'InkGlance.app/Contents/Resources/server/src/server.js' > /dev/null 2>&1 || true
 		sleep 1
 		mkdir -p "$HOME/Applications"
 		rm -rf "$DEST"

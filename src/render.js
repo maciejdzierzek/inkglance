@@ -6,8 +6,8 @@
 // Chrome 122 engine, viewport 572x663 CSS px.
 
 import { homedir } from 'node:os';
-import { t, relativeTime, clockTime } from './i18n.js';
-import { SETTINGS_TABS, LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { t, relativeTime, clockTime, elapsed } from './i18n.js';
+import { SETTINGS_TABS, LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, USAGE_SOURCES, USAGE_API_PRESETS, APPROVAL_MODES, AWAY_PRESETS, APPROVAL_TIMEOUT_PRESETS, REPLY_WINDOW_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS, FINISHED_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 import { forecast, PERIODS } from './usage.js';
 import { lineChart, barChart } from './charts.js';
@@ -91,8 +91,8 @@ function liveScript(ctx, { live }) {
 		if (form && e.target.type === 'radio') form.submit();
 	});
 	// Quick poll: refresh as soon as anything changes; flash the screen when a
-	// session starts waiting (inverting colors is very visible on e-ink).
-	var stateUrl = ${JSON.stringify(stateUrl)}, known = null, lastV = null;
+	// session starts waiting or finishes a turn (inverting colors is very visible on e-ink).
+	var stateUrl = ${JSON.stringify(stateUrl)}, known = null, knownDone = null, lastV = null;
 	function flash() {
 		var h = document.documentElement, n = 0;
 		(function step() { h.classList.toggle('flash'); if (++n < 4) setTimeout(step, 700); })();
@@ -104,10 +104,13 @@ function liveScript(ctx, { live }) {
 				var off = document.getElementById('offline');
 				if (off) off.hidden = true;
 				var fresh = known ? st.waiting.filter(function (id) { return known.indexOf(id) < 0; }) : [];
+				var done = st.finished || [];
+				var freshDone = knownDone ? done.filter(function (id) { return knownDone.indexOf(id) < 0; }) : [];
 				known = st.waiting;
+				knownDone = done;
 				if (lastV !== null && st.v !== lastV) refresh();
 				lastV = st.v;
-				if (fresh.length && st.flash) flash();
+				if ((fresh.length && st.flash) || (freshDone.length && st.flashFinished)) flash();
 			})
 			.catch(function () {
 				var off = document.getElementById('offline');
@@ -133,6 +136,10 @@ function layout(ctx, { title, active, summary, body, live }) {
 	const refreshButton = live
 		? `<a class="icon" href="${esc(href(ctx.path, ctx.keepParams))}" data-live title="${esc(t(lang, 'nav.refresh'))}">${ICONS.refresh}</a>`
 		: '';
+	const updateBadge =
+		ctx.update?.available && active === 'sessions'
+			? `<a class="update-badge" href="${esc(href('/settings', { tab: 'about' }))}">${esc(t(lang, 'about.badge', { version: ctx.update.latest.version }))}</a>`
+			: '';
 	const limitsButton =
 		active === 'sessions' ? `<a class="icon" href="${esc(href('/limits'))}" title="${esc(t(lang, 'nav.limits'))}">${ICONS.limits}</a>` : '';
 	const right =
@@ -158,7 +165,7 @@ ${live ? `<noscript><meta http-equiv="refresh" content="${config.refreshSeconds}
 <body class="${config.color ? 'color' : 'mono'}">
 <div id="app">
 <div class="bar">
-<div class="bar-left">${summary}</div>
+<div class="bar-left">${summary}${updateBadge}</div>
 <div class="bar-right">
 ${refreshButton}
 ${limitsButton}
@@ -198,13 +205,23 @@ function card(ctx, s) {
 	if (fields.has('model') && d.model) meta.push(modelLabel(d.model) + (d.effort ? ` ${d.effort}` : ''));
 	if (fields.has('context') && d.contextTokens) meta.push(t(lang, 'card.context', { n: compact(lang, d.contextTokens) }));
 	if (fields.has('tokens') && d.outputTokens) meta.push(t(lang, 'card.output', { n: compact(lang, d.outputTokens) }));
-	if (fields.has('times')) meta.push(relativeTime(lang, s.lastActivity, ctx.now));
+	if (fields.has('times') && s.group !== 'finished') meta.push(relativeTime(lang, s.lastActivity, ctx.now));
 	if (meta.length) rows.push(`<div class="meta">${esc(meta.join(' · '))}</div>`);
 	if (fields.has('path') && s.cwd) rows.push(`<div class="path">${esc(tildePath(s.cwd))}</div>`);
 	if (ctx.canReply?.(s.id)) rows.push(replyForm(ctx, s));
 
+	// Finished turn: a full-width band with the time since Claude stopped - the
+	// cue to switch to that window. "Later" puts it aside until the next turn.
+	if (s.group === 'finished') {
+		rows.push(`<form method="post" action="${esc(makeHref(ctx)('/dismiss'))}" class="done-later"><input type="hidden" name="t" value="${esc(ctx.config.token)}"><input type="hidden" name="session" value="${esc(s.id)}"><input type="hidden" name="turn" value="${esc(s.turnEndedAt)}"><button type="submit" class="chip">${esc(t(lang, 'finished.later'))}</button></form>`);
+	}
+	const head =
+		s.group === 'finished'
+			? `<div class="done-band"><span class="done-label">${esc(t(lang, 'status.finished'))}</span> <span class="done-since">${esc(elapsed(lang, s.turnEndedAt, ctx.now))}</span></div>
+<div class="card-head"><span class="sub">${esc(sub.join(' · '))}</span></div>`
+			: `<div class="card-head"><span class="badge badge-${s.group}">${esc(t(lang, 'status.' + s.group))}</span><span class="sub">${esc(sub.join(' · '))}</span></div>`;
 	return `<div class="card card-${s.group}">
-<div class="card-head"><span class="badge badge-${s.group}">${esc(t(lang, 'status.' + s.group))}</span><span class="sub">${esc(sub.join(' · '))}</span></div>
+${head}
 <div class="title">${esc(title)}</div>
 ${rows.join('\n')}
 </div>`;
@@ -229,7 +246,7 @@ function replyForm(ctx, s) {
 
 function section(ctx, key, list, heading) {
 	if (!list.length) return '';
-	return `<h2>${heading ?? `${esc(t(ctx.config.language, 'section.' + key))} <span class="count">${list.length}</span>`}</h2>
+	return `<h2 class="h-${key}">${heading ?? `${esc(t(ctx.config.language, 'section.' + key))} <span class="count">${list.length}</span>`}</h2>
 <div class="grid cols-${ctx.config.columns}">
 ${list.map((s) => card(ctx, s)).join('\n')}
 </div>`;
@@ -370,9 +387,13 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 	const lang = ctx.config.language;
 	const href = makeHref(ctx);
 	const idleCount = groups.idle.length + groups.stale.length;
-	const summary = `<span class="sum sum-needsYou${groups.needsYou.length + approvalList.length ? ' sum-on' : ''}"><b>${groups.needsYou.length + approvalList.length}</b> ${esc(t(lang, 'summary.needsYou'))}</span>
-<span class="sum"><b>${groups.working.length}</b> ${esc(t(lang, 'summary.working'))}</span>
-<span class="sum"><b>${idleCount}</b> ${esc(t(lang, 'summary.idle'))}</span>`;
+	const sum = (key, n) => `<span class="sum sum-${key}${n ? ' sum-on' : ''}"><b>${n}</b> ${esc(t(lang, 'summary.' + key))}</span>`;
+	const summary = [
+		sum('needsYou', groups.needsYou.length + approvalList.length),
+		sum('finished', groups.finished.length),
+		sum('working', groups.working.length),
+		sum('idle', idleCount),
+	].join('\n');
 
 	let body = limitsStrip(ctx, usage) + '<div id="main">' + approvalsBlock(ctx, approvalList, data.sessions);
 	if (data.error) {
@@ -381,6 +402,7 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 		body += `<p class="empty">${esc(t(lang, 'empty'))}</p>`;
 	} else {
 		body += section(ctx, 'needsYou', groups.needsYou);
+		body += section(ctx, 'finished', groups.finished);
 		body += section(ctx, 'working', groups.working);
 		body += section(ctx, 'idle', groups.idle);
 		if (groups.stale.length) {
@@ -399,7 +421,7 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 // Settings in tabs, as big buttons (radio groups and toggles styled as buttons):
 // no sliders - dragging is unreliable on e-ink. With JavaScript every tap saves;
 // the reply-button editor saves with its own button (it has text fields).
-export function settingsPage(ctx, { configFile, tab }) {
+export function settingsPage(ctx, { configFile, tab, installed }) {
 	const { config } = ctx;
 	const lang = config.language;
 	const href = makeHref(ctx);
@@ -441,7 +463,11 @@ export function settingsPage(ctx, { configFile, tab }) {
 			h,
 			h === 0 ? t(lang, 'settings.never') : h % 24 === 0 && h >= 48 ? `${h / 24} ${t(lang, 'unit.days')}` : `${h} h`,
 		]);
-		fields = multi('cardFields', CARD_FIELDS, config.cardFields, 'field.') + group('hideIdleAfterHours', idle, config.hideIdleAfterHours);
+		const finished = withCurrent(FINISHED_PRESETS, config.finishedHours).map((h) => [h, h === 0 ? t(lang, 'settings.off') : `${h} h`]);
+		fields =
+			multi('cardFields', CARD_FIELDS, config.cardFields, 'field.') +
+			group('finishedHours', finished, config.finishedHours) +
+			group('hideIdleAfterHours', idle, config.hideIdleAfterHours);
 	} else if (current === 'replies') {
 		manual = true;
 		const list = templatesFor(config);
@@ -471,6 +497,32 @@ ${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} 
 			group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName),
 			group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours),
 		].join('');
+	} else if (current === 'about') {
+		const u = ctx.update;
+		const when = u.checkedAt ? relativeTime(lang, u.checkedAt, ctx.now) : t(lang, 'about.never');
+		let state;
+		if (u.available) {
+			const notes = u.latest.notes.length ? `<ul class="notes">${u.latest.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
+			const how =
+				u.method === 'git' && ctx.local
+					? `<button type="submit" name="action" value="install" class="button btn-allow">${esc(t(lang, 'about.install'))}</button>`
+					: `<p>${esc(t(lang, 'about.how.' + u.method))}</p>`;
+			state = `<p><b>${esc(t(lang, 'about.available', { version: u.latest.version }))}</b> · <a href="${esc(u.latest.url)}">${esc(t(lang, 'about.releaseNotes'))}</a></p>${notes}${how}`;
+		} else {
+			state = `<p>${esc(u.error ? t(lang, 'about.error', { reason: u.error }) : t(lang, 'about.upToDate'))}</p>`;
+		}
+		const result = installed === '1' ? `<p class="saved">${esc(t(lang, 'about.installed'))}</p>` : installed === '0' ? `<p class="error">${esc(t(lang, 'about.installFailed'))}</p>` : '';
+		fields = `<fieldset><legend>InkGlance ${esc(u.current)}</legend>
+<p class="muted small">${esc(t(lang, 'about.method.' + u.method))} · ${esc(t(lang, 'about.checked', { when }))}</p>
+${result}${state}
+</fieldset>
+${toggles('updates', ['updateCheck'])}`;
+		// The check/install buttons post to /update, not to /settings.
+		fields += `<div class="approval-actions"><button type="submit" formaction="${esc(href('/update'))}" name="action" value="check" class="button btn-release">${esc(t(lang, 'about.checkNow'))}</button></div>`;
+		fields = fields.replace(
+			`name="action" value="install" class="button btn-allow"`,
+			`formaction="${esc(href('/update'))}" name="action" value="install" class="button btn-allow"`,
+		);
 	} else if (current === 'limits') {
 		fields = [
 			toggles('limits', ['showLimits']),
@@ -480,15 +532,21 @@ ${group('approvalTimeoutMinutes', APPROVAL_TIMEOUT_PRESETS.map((m) => [m, `${m} 
 	}
 
 	const tabs = Object.keys(SETTINGS_TABS)
-		.map((k) => `<a class="subtab${k === current ? ' subtab-on' : ''}" href="${esc(href('/settings', { tab: k }))}">${esc(t(lang, 'tab.' + k))}</a>`)
+		.map((k) =>
+			k === current
+				? `<span class="tab tab-on" aria-current="page">${esc(t(lang, 'tab.' + k))}</span>`
+				: `<a class="tab" href="${esc(href('/settings', { tab: k }))}">${esc(t(lang, 'tab.' + k))}</a>`,
+		)
 		.join('');
 	const body = `<div id="main">
-<div class="subtabs">${tabs}</div>
+<nav class="tabs">${tabs}</nav>
+<div class="tab-panel">
 <form method="post" action="${esc(href('/settings', { tab: current }))}" id="settings" class="${manual ? 'manual' : 'auto'}">
 <input type="hidden" name="t" value="${esc(config.token)}"><input type="hidden" name="tab" value="${current}">
 ${fields}
 ${manual ? '' : `<noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>`}
 </form>
+</div>
 <p class="muted small">${esc(t(lang, 'settings.fileNote'))} ${esc(tildePath(configFile))}</p>
 </div>
 <script>
