@@ -60,5 +60,17 @@
 	"orientation.auto": "automatic",
 	"orientation.left": "rotate left",
 	"orientation.right": "rotate right",
-	"nav.refresh": "Refresh"
+	"nav.refresh": "Refresh",
+	"settings.alertOn": "Alert when a session",
+	"alertOn.needsYou": "waits for you",
+	"alertOn.finished": "finishes its turn",
+	"settings.alertHow": "How",
+	"settings.macSound": "sound on the computer",
+	"settings.macNotification": "notification on the computer",
+	"settings.readerFlash": "flash the reader",
+	"settings.macSoundName": "Sound",
+	"settings.quietHours": "Quiet hours",
+	"alert.needsYou": "inkai: waiting for you",
+	"alert.finished": "inkai: finished",
+	"settings.quietOff": "off"
 }

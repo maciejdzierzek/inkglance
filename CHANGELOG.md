@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Alerts when a session starts waiting (or, optionally, finishes its turn):
+  sound and/or notification on the Mac, screen flash on the reader, quiet hours.
+  A background watcher checks sessions every 10 s; readers poll a tiny state
+  endpoint and refresh at once when something changes.
+- Service restart waits for the old instance (fixes "Bootstrap failed: 5").
+
 - Refresh button in the top bar.
 - `npm run service:install`: run the panel as a macOS background service.
 

@@ -61,6 +61,12 @@ case "${1:-}" in
 </plist>
 PLIST
 		launchctl bootout "$DOMAIN/$LABEL" 2> /dev/null || true
+		# bootout returns before the old instance is gone; wait for it.
+		i=0
+		while launchctl print "$DOMAIN/$LABEL" > /dev/null 2>&1 && [ $i -lt 50 ]; do
+			sleep 0.2
+			i=$((i + 1))
+		done
 		launchctl bootstrap "$DOMAIN" "$PLIST"
 		echo "Installed and started: $LABEL"
 		echo "Log: $LOG"

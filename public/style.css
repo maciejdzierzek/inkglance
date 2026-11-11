@@ -82,3 +82,6 @@ legend { font-weight: bold; margin-bottom: 0.3em; padding: 0; }
 .rot-left #app, .rot-right #app { position: fixed; top: 0; left: 0; width: 100vh; height: 100vw; overflow-y: auto; padding: 0.35em 0.5em 0.8em; transform-origin: top left; }
 .rot-left #app { transform: translateX(100vw) rotate(90deg); }
 .rot-right #app { transform: translateY(100vh) rotate(-90deg); }
+
+/* Reader alert: a few full-screen inversions when a session starts waiting. */
+html.flash { filter: invert(1); background: #000; }

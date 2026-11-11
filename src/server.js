@@ -11,6 +11,8 @@ import { listSessions, groupSessions } from './sessions.js';
 import { sessionsPage, settingsPage, pairingPage } from './render.js';
 import { createPairing, makeSystemNotify } from './pairing.js';
 import { t } from './i18n.js';
+import { createWatcher } from './watcher.js';
+import { createAlerts, playSound, inQuietHours } from './alerts.js';
 
 const COOKIE = 'inkai_t';
 const MAX_BODY = 16 * 1024;
@@ -23,6 +25,12 @@ const log = (...parts) => console.log(new Date().toISOString().slice(11, 19), ..
 const pairing = createPairing({
 	notify: (code) =>
 		makeSystemNotify({ title: t(config.language, 'notify.title'), body: t(config.language, 'notify.body'), log })(code),
+});
+
+const watcher = createWatcher({
+	getConfig: () => config,
+	list: (cfg) => listSessions(cfg),
+	onEvents: createAlerts({ getConfig: () => config, label: (kind) => t(config.language, 'alert.' + kind), log }),
 });
 
 function sameToken(candidate) {
@@ -67,7 +75,7 @@ const html = (res, body, headers = {}) => send(res, 200, body, { 'Content-Type':
 async function handle(req, res) {
 	const url = new URL(req.url, 'http://panel');
 	const ua = (req.headers['user-agent'] || '').slice(0, 80);
-	log(req.method, url.pathname, req.socket.remoteAddress, ua);
+	if (url.pathname !== '/state') log(req.method, url.pathname, req.socket.remoteAddress, ua);
 
 	if (url.pathname === '/style.css') return send(res, 200, css, { 'Content-Type': 'text/css; charset=utf-8' });
 	if (url.pathname === '/health') return send(res, 200, 'ok', { 'Content-Type': 'text/plain' });
@@ -92,11 +100,24 @@ async function handle(req, res) {
 		return html(res, sessionsPage(ctx, data, groups, { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
 
+	// Tiny poll for readers: a version that moves when the panel would change,
+	// plus the waiting sessions, so the reader can refresh and flash at once.
+	if (url.pathname === '/state') {
+		const body = JSON.stringify({
+			...watcher.state(),
+			flash: config.readerFlash && config.alertOn.includes('needsYou') && !inQuietHours(config.quietHours),
+		});
+		return send(res, 200, body, { 'Content-Type': 'application/json' });
+	}
+
 	if (url.pathname === '/settings') {
 		if (req.method === 'POST') {
 			const form = new URLSearchParams(await readBody(req));
 			if (!sameToken(form.get('t'))) return send(res, 403, 'forbidden');
+			const before = config;
 			config = applySettingsForm(config, form);
+			// Let the user hear a newly chosen sound, or the sound just switched on.
+			if (config.macSound && (config.macSoundName !== before.macSoundName || !before.macSound)) playSound(config.macSoundName);
 			saveConfig(config, file);
 			log('settings saved', JSON.stringify({ ...config, token: '***' }));
 			const params = new URLSearchParams();
@@ -167,6 +188,7 @@ server.on('error', (err) => {
 });
 
 server.listen(config.port, config.host, () => {
+	watcher.start();
 	const host = hostname().replace(/\.local$/, '');
 	const port = config.port === 80 ? '' : `:${config.port}`;
 	console.log(`inkai is running. Open on your e-reader (same Wi-Fi) and type the code shown here:`);

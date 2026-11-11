@@ -60,5 +60,17 @@
 	"orientation.auto": "automatyczna",
 	"orientation.left": "obrót w lewo",
 	"orientation.right": "obrót w prawo",
-	"nav.refresh": "Odśwież"
+	"nav.refresh": "Odśwież",
+	"settings.alertOn": "Alarmuj, gdy sesja",
+	"alertOn.needsYou": "czeka na Ciebie",
+	"alertOn.finished": "skończyła pracę",
+	"settings.alertHow": "Jak",
+	"settings.macSound": "dźwięk na komputerze",
+	"settings.macNotification": "powiadomienie na komputerze",
+	"settings.readerFlash": "mignięcie czytnika",
+	"settings.macSoundName": "Dźwięk",
+	"settings.quietHours": "Cisza nocna",
+	"alert.needsYou": "inkai: czeka na Ciebie",
+	"alert.finished": "inkai: skończyła pracę",
+	"settings.quietOff": "wyłączona"
 }

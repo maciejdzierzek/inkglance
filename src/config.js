@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { MAC_SOUNDS, QUIET_PRESETS } from './alerts.js';
 
 export const LANGUAGES = ['en', 'pl'];
 export const FONT_SCALES = [0.875, 1, 1.125, 1.25, 1.5];
@@ -19,6 +20,8 @@ export const CARD_FIELDS = ['waitingFor', 'activity', 'lastPrompt', 'model', 'co
 // Presets offered as buttons on the settings screen (the file accepts any value in range).
 export const REFRESH_PRESETS = [30, 60, 120, 300, 600];
 export const IDLE_PRESETS = [0, 6, 12, 24, 48, 168];
+export const ALERT_KINDS = ['needsYou', 'finished'];
+export { MAC_SOUNDS, QUIET_PRESETS };
 
 export const DEFAULTS = Object.freeze({
 	host: '0.0.0.0',
@@ -32,6 +35,12 @@ export const DEFAULTS = Object.freeze({
 	color: true,
 	fontScale: 1,
 	showDiagnostics: true,
+	alertOn: ['needsYou'],
+	macSound: true,
+	macSoundName: 'Glass',
+	macNotification: false,
+	readerFlash: true,
+	quietHours: 'off',
 	claudeBin: 'claude',
 	token: '',
 });
@@ -72,6 +81,12 @@ export function normalize(input = {}, base = DEFAULTS) {
 		color: toBool(input.color, base.color),
 		fontScale: FONT_SCALES.includes(scale) ? scale : base.fontScale,
 		showDiagnostics: toBool(input.showDiagnostics, base.showDiagnostics),
+		alertOn: Array.isArray(input.alertOn) ? ALERT_KINDS.filter((k) => input.alertOn.includes(k)) : base.alertOn,
+		macSound: toBool(input.macSound, base.macSound),
+		macSoundName: pick(MAC_SOUNDS, input.macSoundName, base.macSoundName),
+		macNotification: toBool(input.macNotification, base.macNotification),
+		readerFlash: toBool(input.readerFlash, base.readerFlash),
+		quietHours: pick(QUIET_PRESETS, input.quietHours, base.quietHours),
 		claudeBin: typeof input.claudeBin === 'string' && input.claudeBin ? input.claudeBin : base.claudeBin,
 		token: typeof input.token === 'string' && /^[A-Za-z0-9_-]{16,}$/.test(input.token) ? input.token : base.token,
 	};
@@ -116,8 +131,14 @@ export function applySettingsForm(config, form) {
 		cardFields: form.getAll('cardFields'),
 		color: form.get('color') === 'on',
 		showDiagnostics: form.get('showDiagnostics') === 'on',
+		alertOn: form.getAll('alertOn'),
+		macSound: form.get('macSound') === 'on',
+		macSoundName: form.get('macSoundName'),
+		macNotification: form.get('macNotification') === 'on',
+		readerFlash: form.get('readerFlash') === 'on',
+		quietHours: form.get('quietHours'),
 	};
-	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale']) {
+	for (const key of ['language', 'refreshSeconds', 'columns', 'orientation', 'hideIdleAfterHours', 'fontScale', 'macSoundName', 'quietHours']) {
 		if (editable[key] === null) delete editable[key];
 	}
 	return normalize({ ...config, ...editable }, config);

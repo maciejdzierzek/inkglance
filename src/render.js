@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { t, relativeTime, clockTime } from './i18n.js';
-import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
+import { LANGUAGES, FONT_SCALES, COLUMNS, ORIENTATIONS, ALERT_KINDS, MAC_SOUNDS, QUIET_PRESETS, CARD_FIELDS, REFRESH_PRESETS, IDLE_PRESETS } from './config.js';
 import { modelLabel } from './transcript.js';
 
 export const esc = (value) =>
@@ -45,6 +45,7 @@ const ICONS = {
 function liveScript(ctx, { live }) {
 	const { config } = ctx;
 	const beacon = config.showDiagnostics ? makeHref(ctx)('/diag') : '';
+	const stateUrl = makeHref(ctx)('/state');
 	return `<script>
 (function () {
 	var fs = document.getElementById('fs');
@@ -80,6 +81,32 @@ function liveScript(ctx, { live }) {
 			});
 	}
 	setInterval(refresh, every);
+	// Quick poll: refresh as soon as anything changes; flash the screen when a
+	// session starts waiting (inverting colors is very visible on e-ink).
+	var stateUrl = ${JSON.stringify(stateUrl)}, known = null, lastV = null;
+	function flash() {
+		var h = document.documentElement, n = 0;
+		(function step() { h.classList.toggle('flash'); if (++n < 4) setTimeout(step, 700); })();
+	}
+	function poll() {
+		fetch(stateUrl, { cache: 'no-store', credentials: 'same-origin' })
+			.then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+			.then(function (st) {
+				var off = document.getElementById('offline');
+				if (off) off.hidden = true;
+				var fresh = known ? st.waiting.filter(function (id) { return known.indexOf(id) < 0; }) : [];
+				known = st.waiting;
+				if (lastV !== null && st.v !== lastV) refresh();
+				lastV = st.v;
+				if (fresh.length && st.flash) flash();
+			})
+			.catch(function () {
+				var off = document.getElementById('offline');
+				if (off) off.hidden = false;
+			});
+	}
+	poll();
+	setInterval(poll, ${10 * 1000});
 	document.addEventListener('click', function (e) {
 		var a = e.target.closest && e.target.closest('a[data-live]');
 		if (a) { e.preventDefault(); history.replaceState(null, '', a.href); refresh(); }
@@ -242,6 +269,13 @@ ${fields}
 ${group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale)}
 ${group('hideIdleAfterHours', idleOptions, config.hideIdleAfterHours)}
 <fieldset><legend>${esc(t(lang, 'settings.display'))}</legend><div class="choices">${toggle('color')}${toggle('showDiagnostics')}</div></fieldset>
+<fieldset><legend>${esc(t(lang, 'settings.alertOn'))}</legend><div class="choices">${ALERT_KINDS.map(
+		(k) =>
+			`<label class="choice"><input type="checkbox" name="alertOn" value="${k}"${config.alertOn.includes(k) ? ' checked' : ''}><span>${esc(t(lang, 'alertOn.' + k))}</span></label>`,
+	).join('')}</div></fieldset>
+<fieldset><legend>${esc(t(lang, 'settings.alertHow'))}</legend><div class="choices">${toggle('macSound')}${toggle('macNotification')}${toggle('readerFlash')}</div></fieldset>
+${group('macSoundName', MAC_SOUNDS.map((n) => [n, n]), config.macSoundName)}
+${group('quietHours', QUIET_PRESETS.map((q) => [q, q === 'off' ? t(lang, 'settings.quietOff') : q.replace('-', '–')]), config.quietHours)}
 <noscript><button type="submit" class="button">${esc(t(lang, 'settings.save'))}</button></noscript>
 </form>
 <p class="muted small">${esc(t(lang, 'settings.fileNote'))} ${esc(tildePath(configFile))}</p>
