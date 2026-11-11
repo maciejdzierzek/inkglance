@@ -33,15 +33,19 @@ export function notifyCommand(platform, title, text, { sound = null } = {}) {
 		return ['osascript', ['-e', `display notification ${asQuote(text)} with title ${asQuote(title)}${withSound}`]];
 	}
 	if (platform === 'win32') {
-		return ps(
+		// Title and text come from session data (folder names, AI titles). They go
+		// in through environment variables, never into the script itself: PowerShell
+		// treats typographic quotes as quotes too, so escaping is not enough.
+		const [cmd, args] = ps(
 			[
 				'[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null',
 				'$x = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)',
-				`$x.GetElementsByTagName('text')[0].AppendChild($x.CreateTextNode(${psQuote(title)})) | Out-Null`,
-				`$x.GetElementsByTagName('text')[1].AppendChild($x.CreateTextNode(${psQuote(text)})) | Out-Null`,
+				"$x.GetElementsByTagName('text')[0].AppendChild($x.CreateTextNode($env:INKGLANCE_TITLE)) | Out-Null",
+				"$x.GetElementsByTagName('text')[1].AppendChild($x.CreateTextNode($env:INKGLANCE_TEXT)) | Out-Null",
 				`[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier(${psQuote(POWERSHELL_AUMID)}).Show([Windows.UI.Notifications.ToastNotification]::new($x))`,
 			].join('; '),
 		);
+		return [cmd, args, { INKGLANCE_TITLE: String(title), INKGLANCE_TEXT: String(text) }];
 	}
 	return ['notify-send', [String(title), String(text)]];
 }
@@ -83,7 +87,8 @@ export const idleCheckMs = (platform) => (platform === 'win32' ? 5000 : 2000);
 // --- runners ------------------------------------------------------------------------
 const run = (spec, cb = () => {}, opts = {}) => {
 	if (!spec) return cb(new Error('unsupported'));
-	execFile(spec[0], spec[1], { timeout: 15000, windowsHide: true, ...opts }, cb);
+	const env = spec[2] ? { ...process.env, ...spec[2] } : undefined; // values passed outside the command line
+	execFile(spec[0], spec[1], { timeout: 15000, windowsHide: true, env, ...opts }, cb);
 };
 
 export function notify(title, text, options = {}, platform = process.platform) {

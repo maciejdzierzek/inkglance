@@ -331,7 +331,7 @@ ${button('allow', 'btn-allow')}${button('deny', 'btn-deny')}${button('release', 
 </div>`;
 		})
 		.join('\n');
-	return `<h2>${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
+	return `<h2 class="h-needsYou">${esc(t(lang, 'approval.section'))} <span class="count">${list.length}</span></h2><div class="grid cols-1">${cards}</div>`;
 }
 
 // Limits screen: the strip, then three charts with one series each.
@@ -564,8 +564,8 @@ ${manual ? '' : `<noscript><button type="submit" class="button">${esc(t(lang, 's
 
 // Pairing page with an on-screen keypad: e-ink system keyboards are slow and
 // small. The keypad needs JavaScript; without it the plain field still works.
-export function pairingPage(lang, { error }) {
-	const message = error ? `<p class="error">${esc(t(lang, 'pair.' + error))}</p>` : '';
+export function pairingPage(lang, { error, vars = {} }) {
+	const message = error ? `<p class="error">${esc(t(lang, 'pair.' + error, vars))}</p>` : '';
 	const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
 	const keypad = keys
 		.map((k) => {
@@ -581,7 +581,7 @@ export function pairingPage(lang, { error }) {
 <p>${esc(t(lang, 'pair.body'))}</p>
 ${message}
 <form method="post" action="/pair" class="pair" id="pair">
-<input type="text" name="code" id="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+<input type="text" name="code" id="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
 <div class="keypad" id="keypad" hidden>${keypad}</div>
 <noscript><button type="submit" class="button">${esc(t(lang, 'pair.submit'))}</button></noscript>
 </form>
@@ -596,8 +596,8 @@ ${message}
 		var k = e.target.getAttribute('data-k');
 		if (!k) return;
 		if (k === 'del') input.value = input.value.slice(0, -1);
-		else if (input.value.length < 4) input.value += k;
-		if (input.value.length === 4) form.submit();
+		else if (input.value.length < 6) input.value += k;
+		if (input.value.length === 6) form.submit();
 	});
 })();
 </script>

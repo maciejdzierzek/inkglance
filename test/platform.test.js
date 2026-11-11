@@ -6,9 +6,12 @@ test('notifications per platform, quotes made safe', () => {
 	const [mac, macArgs] = notifyCommand('darwin', 'Title "x"', 'It\'s done', { sound: 'Glass' });
 	assert.equal(mac, 'osascript');
 	assert.match(macArgs[1], /display notification "It's done" with title "Title x" sound name "Glass"/);
-	const [win, winArgs] = notifyCommand('win32', 'T', "It's");
+	const tricky = "x’; Start-Process calc; ’";
+	const [win, winArgs, winEnv] = notifyCommand('win32', 'T', tricky);
 	assert.equal(win, 'powershell.exe');
-	assert.match(winArgs.at(-1), /CreateTextNode\('It''s'\)/);
+	assert.ok(!winArgs.at(-1).includes('Start-Process'), 'session text never enters the script');
+	assert.match(winArgs.at(-1), /CreateTextNode\(\$env:INKGLANCE_TEXT\)/);
+	assert.deepEqual(winEnv, { INKGLANCE_TITLE: 'T', INKGLANCE_TEXT: tricky });
 	assert.deepEqual(notifyCommand('linux', 'T', 'x'), ['notify-send', ['T', 'x']]);
 });
 

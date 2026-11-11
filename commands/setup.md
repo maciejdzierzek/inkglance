@@ -67,7 +67,7 @@ Otherwise the panel asks claude.ai for limits itself, rarely (every 15 minutes a
 ## 7. Pair the e-reader
 
 - `npm run config -- url` prints the address(es) to open.
-- Tell the user: open it in the e-reader's browser, type the 4-digit code from the
+- Tell the user: open it in the e-reader's browser, type the 6-digit code from the
   notification on this computer (also in `npm run service:logs`), then bookmark the page.
 - Point them to `docs/e-readers.md` for keeping the reader awake and connected
   (screen lock off, longest power-off time, charger, fullscreen button, rotation).

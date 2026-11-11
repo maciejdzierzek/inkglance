@@ -24,12 +24,17 @@ ENV_FILE="${INKGLANCE_HOOK_ENV:-$HOME/.config/inkglance/hook.env}"
 case "$EVENT" in
 	permission | question) MAX=900 ;;
 	stop) MAX=86400 ;;
-	prompt) MAX=3 ;;
+	prompt) MAX=1 ;;
 	*) exit 0 ;;
 esac
 
+# The token header comes from a file (curl -H @file), so it never shows up in
+# the process list; older setups without the file fall back to the argument.
+HEADER_FILE="$(dirname "$ENV_FILE")/hook.header"
+if [ -r "$HEADER_FILE" ]; then AUTH="@$HEADER_FILE"; else AUTH="X-InkGlance-Token: $INKGLANCE_TOKEN"; fi
+
 OUT=$(curl -s -f -m "$MAX" -X POST \
-	-H "X-InkGlance-Token: $INKGLANCE_TOKEN" -H "Content-Type: application/json" \
+	-H "$AUTH" -H "Content-Type: application/json" \
 	--data-binary @- "http://127.0.0.1:$INKGLANCE_PORT/hook/$EVENT") || exit 0
 [ -n "$OUT" ] || exit 0
 

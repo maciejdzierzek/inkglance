@@ -26,6 +26,7 @@
 		"config": "node scripts/config.js",
 		"tray:install": "sh scripts/tray-macos.sh install",
 		"tray:build": "sh scripts/tray-macos.sh build",
-		"tray:dev": "sh scripts/tray-macos.sh dev"
+		"tray:dev": "sh scripts/tray-macos.sh dev",
+		"demo": "node scripts/demo.js"
 	}
 }

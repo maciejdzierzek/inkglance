@@ -3,7 +3,7 @@
 // Zero dependencies: Node's http server, server-rendered HTML, plain CSS.
 
 import { createServer } from 'node:http';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { hostname, networkInterfaces } from 'node:os';
 import { timingSafeEqual } from 'node:crypto';
@@ -20,6 +20,8 @@ import { hourlyTokens } from './activity.js';
 import { createUpdates } from './updates.js';
 import { createApprovals } from './approvals.js';
 import { createReplies, wakeText } from './replies.js';
+import { isPrivateAddress, isAllowedHost } from './access.js';
+import { demoSessions, demoApprovals, demoUsage, demoCanReply } from './demo.js';
 
 const COOKIE = 'inkglance_t';
 const LEGACY_COOKIE = 'inkai_t'; // before the rename: keeps paired readers paired
@@ -31,6 +33,13 @@ const file = configPath();
 let config = loadConfig(file);
 
 const log = (...parts) => console.log(new Date().toISOString().slice(11, 19), ...parts);
+
+// Demo mode (npm run demo): made-up sessions, limits and requests; no Claude Code,
+// no usage queries, no update checks, nothing recorded.
+const DEMO = process.env.INKGLANCE_DEMO === '1';
+const sessionsNow = (cfg, now) => (DEMO ? Promise.resolve(demoSessions()) : listSessions(cfg, now));
+const usageNow = (cfg, now) => (DEMO ? Promise.resolve(demoUsage(now)) : getUsage(cfg, now));
+const recordUsageUnlessDemo = (usage) => (DEMO ? null : recordUsage(usage));
 
 const pairing = createPairing({
 	notify: (code) =>
@@ -54,7 +63,7 @@ const approvals = createApprovals({
 });
 const watcher = createWatcher({
 	getConfig: () => config,
-	list: (cfg) => listSessions(cfg),
+	list: (cfg) => sessionsNow(cfg),
 	onEvents: alerts,
 	extraWaiting: () => approvals.list().map((a) => a.id),
 });
@@ -107,6 +116,13 @@ async function handle(req, res) {
 	const url = new URL(req.url, 'http://panel');
 	const ua = (req.headers['user-agent'] || '').slice(0, 80);
 	if (url.pathname !== '/state') log(req.method, url.pathname, req.socket.remoteAddress, ua);
+
+	// Network guard (src/access.js): private networks only, and no foreign Host names.
+	if (!isPrivateAddress(req.socket.remoteAddress)) return send(res, 403, 'forbidden: not a local network', { 'Content-Type': 'text/plain' });
+	if (!isAllowedHost(req.headers.host, { allowedHosts: config.allowedHosts })) {
+		log('REFUSED host', JSON.stringify(String(req.headers.host).slice(0, 80)));
+		return send(res, 421, 'unknown host name - add it to "allowedHosts" in the config file', { 'Content-Type': 'text/plain' });
+	}
 
 	if (url.pathname === '/style.css') return send(res, 200, css, { 'Content-Type': 'text/css; charset=utf-8' });
 	if (url.pathname === '/health') return send(res, 200, 'ok', { 'Content-Type': 'text/plain' });
@@ -185,11 +201,15 @@ async function handle(req, res) {
 	const ctx = { config, now: Date.now(), path: url.pathname, keepParams, tokenInLinks: !viaCookie, update: updates.status(), local: isLoopback(req.socket.remoteAddress) };
 
 	if (req.method === 'GET' && url.pathname === '/') {
-		const data = await listSessions(config, ctx.now);
+		const data = await sessionsNow(config, ctx.now);
 		const groups = groupSessions(data.sessions, config, ctx.now);
-		const usage = config.showLimits ? await getUsage(config, ctx.now) : null;
-		recordUsage(usage);
-		const extras = { usage, approvals: approvals.list(), canReply: (id) => replies.isOpen(id) };
+		const usage = config.showLimits ? await usageNow(config, ctx.now) : null;
+		recordUsageUnlessDemo(usage);
+		const extras = {
+			usage,
+			approvals: DEMO ? [...demoApprovals(), ...approvals.list()] : approvals.list(),
+			canReply: (id) => replies.isOpen(id) || (DEMO && demoCanReply(id)),
+		};
 		return html(res, sessionsPage(ctx, data, groups, extras, { showStale: url.searchParams.get('stale') === '1' }), cookie);
 	}
 
@@ -208,11 +228,11 @@ async function handle(req, res) {
 	}
 
 	if (req.method === 'GET' && url.pathname === '/limits') {
-		const usage = await getUsage({ ...config, usageSource: config.usageSource === 'off' ? 'auto' : config.usageSource }, ctx.now);
-		recordUsage(usage);
+		const usage = await usageNow({ ...config, usageSource: config.usageSource === 'off' ? 'auto' : config.usageSource }, ctx.now);
+		recordUsageUnlessDemo(usage);
 		const raw = usage?.source === 'extension' ? await extensionHistory() : null;
 		const charts = chartData(historyFor(raw), usage, ctx.now);
-		charts.tokens = await hourlyTokens(24, ctx.now).catch(() => []);
+		charts.tokens = DEMO ? [] : await hourlyTokens(24, ctx.now).catch(() => []);
 		return html(res, limitsPage(ctx, usage, charts), cookie);
 	}
 
@@ -230,7 +250,7 @@ async function handle(req, res) {
 			if (!viaCookie) params.set('t', config.token);
 			return send(res, 303, '', { Location: `/settings?${params}` });
 		}
-		return html(res, settingsPage(ctx, { configFile: file, tab: url.searchParams.get('tab'), installed: url.searchParams.get('installed') }), cookie);
+		return html(res, settingsPage(ctx, { configFile: DEMO ? '~/.config/inkglance/config.json' : file, tab: url.searchParams.get('tab'), installed: url.searchParams.get('installed') }), cookie);
 	}
 
 	// Answer from the reader: allow, deny, or hand back to the computer.
@@ -315,7 +335,13 @@ async function handle(req, res) {
 }
 
 async function handlePairing(req, res, url) {
-	const page = (error) => send(res, 200, pairingPage(config.language, { error }), { 'Content-Type': 'text/html; charset=utf-8' });
+	const page = (error, vars) => send(res, 200, pairingPage(config.language, { error, vars }), { 'Content-Type': 'text/html; charset=utf-8' });
+	// Too many codes this hour: say when the next one comes instead of issuing it.
+	const lockedPage = () => {
+		const until = pairing.lockedUntil();
+		log('PAIRING locked until', new Date(until).toISOString().slice(11, 19), req.socket.remoteAddress);
+		return page('locked', { minutes: Math.max(1, Math.ceil((until - Date.now()) / 60000)) });
+	};
 	if (req.method === 'POST' && url.pathname === '/pair') {
 		const form = Object.fromEntries(new URLSearchParams(await readBody(req)));
 		const result = pairing.check(form.code);
@@ -328,10 +354,10 @@ async function handlePairing(req, res, url) {
 				'Set-Cookie': `${COOKIE}=${encodeURIComponent(config.token)}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax`,
 			});
 		}
-		if (result === 'expired') pairing.ensureCode();
+		if (result === 'expired' && !pairing.ensureCode()) return lockedPage();
 		return page(result);
 	}
-	pairing.ensureCode();
+	if (!pairing.ensureCode()) return lockedPage();
 	return page(null);
 }
 
@@ -369,12 +395,17 @@ server.on('error', (err) => {
 function writeHookEnv() {
 	const envFile = join(dirname(file), 'hook.env');
 	writeFileSync(envFile, `INKGLANCE_PORT=${config.port}\nINKGLANCE_TOKEN=${config.token}\n`, { mode: 0o600 });
+	// The same token as a ready header line for curl -H @file (keeps it out of `ps`).
+	const headerFile = join(dirname(file), 'hook.header');
+	writeFileSync(headerFile, `X-InkGlance-Token: ${config.token}\n`, { mode: 0o600 });
+	for (const f of [envFile, headerFile]) chmodSync(f, 0o600); // also when the files already existed
 }
 
 server.listen(config.port, config.host, () => {
-	writeHookEnv();
+	if (!DEMO) writeHookEnv(); // hooks must never reach a demo
 	watcher.start();
-	updates.start();
+	if (!DEMO) updates.start();
+	if (DEMO) console.log(`DEMO MODE: made-up sessions. Open http://localhost:${config.port}/?t=${config.token}`);
 	const host = hostname().replace(/\.local$/, '');
 	const port = config.port === 80 ? '' : `:${config.port}`;
 	console.log(`InkGlance is running. Open on your e-reader (same Wi-Fi) and type the code shown here:`);

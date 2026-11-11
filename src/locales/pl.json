@@ -29,7 +29,7 @@
 	"lang.en": "English",
 	"lang.pl": "Polski",
 	"pair.title": "Połącz to urządzenie",
-	"pair.body": "Na komputerze wyskoczyło powiadomienie z 4-cyfrowym kodem. Wpisz go tutaj.",
+	"pair.body": "Na komputerze wyskoczyło powiadomienie z 6-cyfrowym kodem (jest też w dzienniku). Wpisz go tutaj.",
 	"pair.submit": "Połącz",
 	"pair.wrong": "Zły kod. Spróbuj jeszcze raz.",
 	"pair.expired": "Kod wygasł albo było za dużo prób. Na komputerze jest już nowy kod.",
@@ -165,5 +165,6 @@
 	"elapsed.hours": "{h} h {m} min temu",
 	"elapsed.days": "{d} dni temu",
 	"settings.finishedHours": "„Twoja kolej” pokazuj przez",
-	"settings.off": "wyłączone"
+	"settings.off": "wyłączone",
+	"pair.locked": "Za dużo kodów w tej godzinie - zabezpieczenie przed zgadywaniem. Spróbuj za {minutes} min."
 }

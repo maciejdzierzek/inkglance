@@ -29,7 +29,7 @@
 	"lang.en": "English",
 	"lang.pl": "Polski",
 	"pair.title": "Connect this device",
-	"pair.body": "Your computer is showing a 4-digit code in a notification. Type it here.",
+	"pair.body": "Your computer is showing a 6-digit code in a notification (also in the log). Type it here.",
 	"pair.submit": "Connect",
 	"pair.wrong": "Wrong code. Try again.",
 	"pair.expired": "The code expired or had too many attempts. A new code is on your computer now.",
@@ -165,5 +165,6 @@
 	"elapsed.hours": "{h} h {m} min ago",
 	"elapsed.days": "{d} d ago",
 	"settings.finishedHours": "Show “your turn” for",
-	"settings.off": "off"
+	"settings.off": "off",
+	"pair.locked": "Too many codes this hour - a safeguard against guessing. Try again in {minutes} min."
 }

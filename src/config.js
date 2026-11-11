@@ -61,6 +61,9 @@ export const DEFAULTS = Object.freeze({
 	templates: [],
 	updateCheck: true,
 	updateRepo: 'maciejdzierzek/inkglance',
+	// Extra host names the panel answers to (e.g. a VPN name); IP addresses,
+	// localhost and this computer's name always work. File only.
+	allowedHosts: [],
 	claudeBin: 'claude',
 	token: '',
 });
@@ -121,6 +124,9 @@ export function normalize(input = {}, base = DEFAULTS) {
 		templates: Array.isArray(input.templates)
 			? input.templates.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim().slice(0, 200)).slice(0, 12)
 			: base.templates,
+		allowedHosts: Array.isArray(input.allowedHosts)
+			? input.allowedHosts.filter((h) => typeof h === 'string' && /^[A-Za-z0-9.-]{1,253}$/.test(h)).slice(0, 20)
+			: base.allowedHosts,
 		claudeBin: typeof input.claudeBin === 'string' && input.claudeBin ? input.claudeBin : base.claudeBin,
 		token: typeof input.token === 'string' && /^[A-Za-z0-9_-]{16,}$/.test(input.token) ? input.token : base.token,
 	};

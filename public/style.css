@@ -84,7 +84,7 @@ legend { font-weight: bold; margin-bottom: 0.3em; padding: 0; }
 
 /* Pairing with on-screen keypad. */
 .pair-page { max-width: 24em; margin: 0 auto; padding: 0.8em; }
-.pair input { display: block; font-size: 2.4em; letter-spacing: 0.4em; width: 100%; padding: 0.15em 0.3em; margin: 0.3em 0 0.5em; border: 3px solid #000; background: #fff; text-align: center; }
+.pair input { display: block; font-size: 2.2em; letter-spacing: 0.25em; width: 100%; padding: 0.15em 0.3em; margin: 0.3em 0 0.5em; border: 3px solid #000; background: #fff; text-align: center; }
 .keypad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4em; }
 .key { font: inherit; font-size: 1.8em; font-weight: bold; padding: 0.35em 0; border: 2px solid #000; background: #fff; color: #000; cursor: pointer; }
 .key-fn { font-size: 1em; }

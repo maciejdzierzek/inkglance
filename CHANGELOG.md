@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Security: pairing codes have 6 digits and at most 3 are issued per hour
+  (guessing a code from the network is no longer practical); only loopback and
+  private networks may connect; the Host header must name this computer
+  (blocks DNS rebinding; extra names via `allowedHosts`); Windows notification
+  text goes through environment variables (typographic quotes could break out
+  of the PowerShell string); the hook token reaches curl through a header file,
+  not the process list; `hook.env` is always 0600; the prompt hook waits 1 s.
+- Demo mode: `npm run demo` serves made-up sessions, a permission request, a
+  question and limits on port 4800 - for trying InkGlance and for screenshots.
+- README rewritten: requirements, install (plugin or manual - not both),
+  pairing, privacy, troubleshooting, uninstall, honest update paths;
+  screenshots from the demo. SECURITY.md updated.
+
 - **Your turn**: sessions whose turn ended (read from the transcript: Claude
   stopped without a tool call and you have not answered) get their own section,
   a full-width band with the time since they finished, a reader flash, the
