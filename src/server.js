@@ -9,7 +9,7 @@ import { hostname, networkInterfaces } from 'node:os';
 import { timingSafeEqual } from 'node:crypto';
 import { loadConfig, saveConfig, applySettingsForm, configPath } from './config.js';
 import { listSessions, groupSessions, dismiss } from './sessions.js';
-import { sessionsPage, settingsPage, pairingPage, limitsPage } from './render.js';
+import { sessionsPage, settingsPage, pairingPage, limitsPage, colorsPage } from './render.js';
 import { createPairing, makeSystemNotify } from './pairing.js';
 import { t } from './i18n.js';
 import { createWatcher } from './watcher.js';
@@ -239,6 +239,8 @@ async function handle(req, res) {
 		charts.tokens = DEMO ? [] : await hourlyTokens(24, ctx.now).catch(() => []);
 		return html(res, limitsPage(ctx, usage, charts), cookie);
 	}
+
+	if (req.method === 'GET' && url.pathname === '/colors') return html(res, colorsPage(ctx), cookie);
 
 	if (url.pathname === '/settings') {
 		if (req.method === 'POST') {

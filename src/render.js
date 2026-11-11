@@ -454,6 +454,25 @@ export function sessionsPage(ctx, data, groups, { usage, approvals: approvalList
 	return layout(ctx, { title: t(lang, 'app.title'), active: 'sessions', summary, body, live: true, usage });
 }
 
+// Color test: numbered swatches as fills, text and borders, to see on the
+// reader itself which colors its screen really shows (color e-ink mutes dark
+// and mid tones a lot).
+export const SWATCHES = [
+	'#c8102e', '#ff0000', '#e8001c', '#ff3b30',
+	'#1e7b34', '#00a03c', '#00c853', '#33cc33',
+	'#0b5394', '#0060ff', '#2196f3', '#00aaff',
+	'#ff8000', '#ffcc00', '#ff00ff', '#00cccc',
+];
+export function colorsPage(ctx) {
+	const lang = ctx.config.language;
+	const tiles = SWATCHES.map(
+		(c, i) => `<div class="sw"><div class="sw-fill" style="background:${c}">${i + 1}</div><div class="sw-text" style="color:${c};border-color:${c}">${i + 1}</div></div>`,
+	).join('');
+	const body = `<div id="main"><p>${esc(t(lang, 'colors.intro'))}</p><div class="swatches">${tiles}</div></div>`;
+	const summary = `<span class="bar-title">${esc(t(lang, 'colors.title'))}</span>`;
+	return layout(ctx, { title: t(lang, 'colors.title'), active: 'limits', summary, body, live: false });
+}
+
 // Settings in tabs, as big buttons (radio groups and toggles styled as buttons):
 // no sliders - dragging is unreliable on e-ink. With JavaScript every tap saves;
 // the reply-button editor saves with its own button (it has text fields).
@@ -493,6 +512,7 @@ export function settingsPage(ctx, { configFile, tab, installed }) {
 			group('fontScale', FONT_SCALES.map((f) => [f, Math.round(f * 100) + '%']), config.fontScale),
 			group('refreshSeconds', withCurrent(REFRESH_PRESETS, config.refreshSeconds).map((x) => [x, seconds(x)]), config.refreshSeconds),
 			toggles('display', ['color', 'showDiagnostics']),
+			`<p><a href="${esc(href('/colors'))}">${esc(t(lang, 'colors.link'))}</a></p>`,
 		].join('');
 	} else if (current === 'cards') {
 		const idle = withCurrent(IDLE_PRESETS, config.hideIdleAfterHours).map((h) => [

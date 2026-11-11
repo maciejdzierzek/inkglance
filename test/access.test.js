@@ -13,10 +13,10 @@ test('only this computer and private networks may connect', () => {
 
 test('Host must be an address, localhost, this computer or an allowed name', () => {
 	const opts = { machine: 'Studio.local', allowedHosts: ['panel.tailnet.ts.net'] };
-	for (const h of ['192.168.0.26', '192.168.0.26:4747', 'localhost:80', '[::1]:4747', 'studio', 'studio.local', 'STUDIO.LOCAL:80', 'panel.tailnet.ts.net', undefined]) {
+	for (const h of ['192.168.1.50', '192.168.1.50:4747', 'localhost:80', '[::1]:4747', 'studio', 'studio.local', 'STUDIO.LOCAL:80', 'panel.tailnet.ts.net', undefined]) {
 		assert.equal(isAllowedHost(h, opts), true, String(h));
 	}
-	for (const h of ['evil.example', 'studio.evil.example', '192.168.0.26.nip.io', '[::1]evil']) {
+	for (const h of ['evil.example', 'studio.evil.example', '192.168.1.50.nip.io', '[::1]evil']) {
 		assert.equal(isAllowedHost(h, opts), false, h);
 	}
 });

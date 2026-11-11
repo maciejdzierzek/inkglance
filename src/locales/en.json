@@ -166,5 +166,8 @@
 	"elapsed.days": "{d} d ago",
 	"settings.finishedHours": "Show “your turn” for",
 	"settings.off": "off",
-	"pair.locked": "Too many codes this hour - a safeguard against guessing. Try again in {minutes} min."
+	"pair.locked": "Too many codes this hour - a safeguard against guessing. Try again in {minutes} min.",
+	"colors.title": "Color test",
+	"colors.link": "Color test for this screen",
+	"colors.intro": "Which numbers look clearly colored on this reader (not grey)? Each color is shown as a fill and as text with a border."
 }

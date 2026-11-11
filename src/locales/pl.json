@@ -166,5 +166,8 @@
 	"elapsed.days": "{d} dni temu",
 	"settings.finishedHours": "„Twoja kolej” pokazuj przez",
 	"settings.off": "wyłączone",
-	"pair.locked": "Za dużo kodów w tej godzinie - zabezpieczenie przed zgadywaniem. Spróbuj za {minutes} min."
+	"pair.locked": "Za dużo kodów w tej godzinie - zabezpieczenie przed zgadywaniem. Spróbuj za {minutes} min.",
+	"colors.title": "Test kolorów",
+	"colors.link": "Test kolorów tego ekranu",
+	"colors.intro": "Które numery na tym czytniku są wyraźnie kolorowe (nie szare)? Każdy kolor jest pokazany jako wypełnienie oraz jako tekst z ramką."
 }
