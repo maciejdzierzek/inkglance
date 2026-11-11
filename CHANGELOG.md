@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Claude Code plugin in the repository: hooks without editing settings, plus
+  `/inkglance:setup` (guided install and pairing) and `/inkglance:doctor`.
+- `npm run config` to read and change settings from the terminal.
+- Duplicate permission requests (plugin + settings hooks) join one card.
+- Renamed to InkGlance (was the working name "inkai"); old config, cookie,
+  service and hooks are migrated.
+
 - One-tap replies from the reader to sessions that finished their turn, in
   parallel with the computer: Stop hook with `asyncRewake` + UserPromptSubmit
   hook. Templates configurable.

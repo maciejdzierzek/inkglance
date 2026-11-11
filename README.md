@@ -124,7 +124,26 @@ Safety:
 - **Node.js 20+**
 - **Claude Code** with the `claude agents` command
 
-## Quick start
+## Install with Claude Code (recommended)
+
+In Claude Code:
+
+```
+/plugin install inkglance --marketplace maciejdzierzek/inkglance
+/inkglance:setup
+```
+
+The plugin brings the hooks (permission requests, replies) - no editing of
+settings files. `/inkglance:setup` then does the rest with you: checks Node and
+Claude Code, puts the server in `~/.local/share/inkglance`, asks for language and
+port, starts the background service, suggests a source for plan limits and walks
+you through pairing the reader. `/inkglance:doctor` checks everything later.
+
+Prefer no plugin? Clone the repository, open Claude Code in it and say:
+*"Follow commands/setup.md to set up InkGlance for me"* - then also run
+`npm run hooks:install` for the hooks.
+
+## Quick start (manual)
 
 ```sh
 git clone https://github.com/maciejdzierzek/inkglance.git

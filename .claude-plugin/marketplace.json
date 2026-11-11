@@ -1,0 +1,15 @@
+{
+	"name": "inkglance",
+	"description": "InkGlance - a Claude Code session panel for e-ink readers.",
+	"owner": {
+		"name": "Maciej Dzierżek",
+		"url": "https://github.com/maciejdzierzek"
+	},
+	"plugins": [
+		{
+			"name": "inkglance",
+			"source": "./",
+			"description": "Claude Code session panel for e-ink readers: hooks for approvals and replies, plus /inkglance:setup and /inkglance:doctor."
+		}
+	]
+}

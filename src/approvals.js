@@ -53,6 +53,7 @@ export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }
 		pending.delete(id);
 		log('APPROVAL', outcome.decision || 'released', outcome.reason || '', p.tool, p.detail.slice(0, 80));
 		p.resolve(outcome);
+		for (const follower of p.followers) follower(outcome);
 		onChange();
 		return true;
 	}
@@ -66,10 +67,15 @@ export function createApprovals({ getConfig, log, onChange, idle = idleSeconds }
 			const s = await idle();
 			if (s === null || s < c.awaySeconds) return { decision: null, reason: 'at desk' };
 		}
+		// The same request may arrive twice (hooks from the plugin and from
+		// settings.json): join the one already waiting instead of showing two cards.
+		const key = `${input?.session_id || ''}|${input?.tool_name || ''}|${JSON.stringify(input?.tool_input || {})}`;
+		const twin = [...pending.values()].find((p) => p.key === key);
+		if (twin) return new Promise((resolve) => twin.followers.push(resolve));
 		const id = randomUUID();
 		const { tool, detail } = summarize(input);
 		return new Promise((resolve) => {
-			const p = { id, sessionId: input?.session_id || '', cwd: input?.cwd || '', tool, detail, createdAt: Date.now(), resolve };
+			const p = { id, key, followers: [], sessionId: input?.session_id || '', cwd: input?.cwd || '', tool, detail, createdAt: Date.now(), resolve };
 			p.timer = setTimeout(() => finish(id, { decision: null, reason: 'timeout' }), c.approvalTimeoutMinutes * 60 * 1000);
 			if (c.approvals === 'away') {
 				p.watch = setInterval(async () => {

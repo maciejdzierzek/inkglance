@@ -1,0 +1,10 @@
+{
+	"name": "inkglance",
+	"version": "0.1.0",
+	"description": "A calm, always-on panel for your Claude Code sessions on an e-ink reader: who waits for you, who works, plan limits, alerts, approvals and one-tap replies.",
+	"author": { "name": "Maciej Dzierżek", "url": "https://github.com/maciejdzierzek" },
+	"homepage": "https://github.com/maciejdzierzek/inkglance",
+	"repository": "https://github.com/maciejdzierzek/inkglance",
+	"license": "MIT",
+	"keywords": ["e-ink", "dashboard", "sessions", "notifications", "e-reader", "pocketbook"]
+}

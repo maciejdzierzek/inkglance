@@ -46,3 +46,16 @@ test('summary prefers the command, clips long input', () => {
 	assert.deepEqual(summarize(input), { tool: 'Bash', detail: 'npm test' });
 	assert.equal(summarize({ tool_name: 'Write', tool_input: { file_path: 'x'.repeat(500) } }).detail.length, 400);
 });
+
+test('a duplicate request joins the waiting one', async () => {
+	const { a } = make({ ...base, approvals: 'always' }, 0);
+	let id;
+	const first = a.request(input, { onHold: (x) => (id = x) });
+	await new Promise((r) => setTimeout(r, 10));
+	const second = a.request(input);
+	await new Promise((r) => setTimeout(r, 10));
+	assert.equal(a.list().length, 1);
+	a.decide(id, 'allow');
+	assert.equal((await first).decision, 'allow');
+	assert.equal((await second).decision, 'allow');
+});

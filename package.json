@@ -22,6 +22,7 @@
 		"statusline:print": "sh scripts/statusline-snippet.sh",
 		"hooks:install": "node scripts/hooks.js install",
 		"hooks:uninstall": "node scripts/hooks.js uninstall",
-		"hooks:status": "node scripts/hooks.js status"
+		"hooks:status": "node scripts/hooks.js status",
+		"config": "node scripts/config.js"
 	}
 }
